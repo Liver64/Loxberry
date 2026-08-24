@@ -11,6 +11,17 @@ use LoxBerry::System;
 
 init();
 
+# --- Repetition of update_v4.0.0.15.pl ---
+#
+# The 4.0.0.15 release tag was moved after the first systems had already
+# updated: the cloudflared installation and the is_raspberry.cfg fix were
+# committed after the zipball those systems had downloaded. There
+# update_v4.0.0.15.pl ran in its earlier form, and it can never run again - a
+# script only runs while "installed version < script version", and those
+# systems already are on 4.0.0.15. Every step is therefore repeated here.
+# All of them are idempotent: each checks its target state first and does
+# nothing when it is already reached.
+
 # --- Mosquitto logfile: group loxberry needs write permission (660) ---
 #
 # log_maint.pl shrinks oversized logfiles with copytruncate: gzip --keep, then
