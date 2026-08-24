@@ -363,4 +363,63 @@ is( $killcall->{opts}{basicauth_password}, 'TestPass!23', 'Basic-Auth mit dem Kl
 is( LoxBerry::Auth::_store_get_token('AB:CD:EF:01:02:03', 'loxberry'), undef,
     'nach kill_token ist der Eintrag aus dem Bestand entfernt' );
 
+
+# ==========================================================================
+# POST-Unterstuetzung
+# ==========================================================================
+
+LoxBerry::Auth::_store_put_token('AB:CD:EF:01:02:03', 'loxberry',
+	{ msnr => 1, name => 'Miniserver', firmware => '17.1.7.3' },
+	{ token => 'tokTESTVALUE123', validUntil => LoxBerry::System::epoch2lox() + 60*86400,
+	  rights => 1924, perm => 260, acquired => 1, info => 'x' } );
+
+# --- GET bleibt die Vorgabe ------------------------------------------------
+@optlog = ();
+LoxBerry::Auth::request(1, '/jdev/sps/io/Test');
+my ($getcall) = grep { $_->{url} =~ m{autht=} } @optlog;
+is( $getcall->{opts}{method},  undef, 'ohne Option bleibt es ein GET' );
+is( $getcall->{opts}{content}, undef, 'ohne Option kein Rumpf' );
+
+# --- POST mit Rumpf --------------------------------------------------------
+@optlog = ();
+my $postbody = '556740899/{"userDefaultStructure":{},"ts":556740899}';
+my ($pc, $pi) = LoxBerry::Auth::request(1, '/jdev/sps/setusersettings',
+	method  => 'POST',
+	content => $postbody );
+is( $pi->{error}, 0, 'POST wird ausgefuehrt' );
+
+my ($postcall) = grep { $_->{url} =~ m{setusersettings} } @optlog;
+is( $postcall->{opts}{method},  'POST',     'Methode kommt am Transport an' );
+is( $postcall->{opts}{content}, $postbody,  'Rumpf kommt unveraendert am Transport an' );
+like( $postcall->{opts}{content_type}, qr{^text/plain}, 'Standard-Inhaltstyp ist text/plain' );
+like( $postcall->{url}, qr{\?autht=[0-9a-f]{64}&user=loxberry$},
+      'auch ein POST wird mit autht signiert' );
+
+# --- DER KERN: getkey2 darf dabei NICHT zum POST werden --------------------
+my ($keycall) = grep { $_->{url} =~ m{/jdev/sys/getkey2/} } @optlog;
+is( $keycall->{opts}{method},  undef, 'getkey2 bleibt ein GET, auch wenn das Kommando ein POST ist' );
+is( $keycall->{opts}{content}, undef, 'getkey2 bekommt keinen Rumpf' );
+
+# --- eigener Inhaltstyp ----------------------------------------------------
+@optlog = ();
+LoxBerry::Auth::request(1, '/jdev/sps/setusersettings',
+	method       => 'POST',
+	content      => '{}',
+	content_type => 'application/json' );
+my ($jsoncall) = grep { $_->{url} =~ m{setusersettings} } @optlog;
+is( $jsoncall->{opts}{content_type}, 'application/json', 'eigener Inhaltstyp wird durchgereicht' );
+
+# --- der 401-Wiederholversuch gilt auch fuer POST --------------------------
+@calls  = ();
+@optlog = ();
+$behaviour{cmd_401_once} = 1;
+my ($rc, $ri) = LoxBerry::Auth::request(1, '/jdev/sps/setusersettings',
+	method => 'POST', content => '{}' );
+is( $ri->{error}, 0, 'POST wird nach einem 401 wiederholt' );
+is( scalar( grep { m{/jdev/sys/gettoken/} } @calls ), 1,
+    'dabei wird genau ein neuer Token beschafft' );
+my ($tokcall) = grep { $_->{url} =~ m{/jdev/sys/gettoken/} } @optlog;
+is( $tokcall->{opts}{method}, undef, 'auch gettoken bleibt ein GET' );
+$behaviour{cmd_401_once} = 0;
+
 done_testing();

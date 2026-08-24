@@ -416,13 +416,34 @@ sub _http_get
 		push @headers, 'Authorization' => 'Basic '
 			. MIME::Base64::encode_base64( $opts{basicauth_user} . ':' . $pw, '' );
 	}
-	my $resp = $ua->get($url, @headers);
+	my $resp;
+	my $method = defined $opts{method} ? uc($opts{method}) : 'GET';
+	if ( $method eq 'POST' ) {
+		my $ctype = defined $opts{content_type} ? $opts{content_type}
+		                                        : 'text/plain; charset=utf-8';
+		$resp = $ua->post( $url, @headers,
+			'Content-Type' => $ctype,
+			Content        => ( defined $opts{content} ? $opts{content} : '' ) );
+	} else {
+		$resp = $ua->get($url, @headers);
+	}
+
 	# LWP fakes a 500 when the connection never happened - tell that apart
 	my $cw = $resp->header('Client-Warning');
 	if ( defined $cw and $cw eq 'Internal response' ) {
 		return (undef, undef, $resp->status_line);
 	}
 	return ($resp->code, $resp->decoded_content, $resp->status_line);
+}
+
+# request() passes its options on to get_token, cfg/api and getkey2 as well.
+# Without this filter a POST command would turn the key request into a POST too -
+# and the Miniserver does not answer that with the one-time key.
+sub _helper_opts
+{
+	my (%opts) = @_;
+	delete @opts{ qw( method content content_type ) };
+	return %opts;
 }
 
 sub _call
@@ -815,7 +836,10 @@ sub request
 	my ($ms, $command, %opts) = @_;
 	my %info = ( code => undef, status => undef, error => 1, message => '', errcode => undef );
 
-	my $tok = get_token($ms, %opts);
+	# method/content gehoeren nur an das Kommando, nicht an getkey2 & Co.
+	my %helper = _helper_opts(%opts);
+
+	my $tok = get_token($ms, %helper);
 	if (! $tok->{ok}) {
 		$info{errcode} = $tok->{error};
 		$info{message} = $tok->{message};
@@ -825,9 +849,9 @@ sub request
 	# expired -> new token; below the threshold -> renew without a password
 	my $left = int($tok->{validUntil}) - LoxBerry::System::epoch2lox();
 	if ($left <= 0) {
-		$tok = get_token($ms, %opts, force => 1);
+		$tok = get_token($ms, %helper, force => 1);
 	} elsif ($left < $REFRESH_THRESHOLD) {
-		my $r = refresh_token($ms, %opts);
+		my $r = refresh_token($ms, %helper);
 		$tok = $r if ( $r->{ok} );
 	}
 	if (! $tok->{ok}) {
@@ -836,7 +860,7 @@ sub request
 		return (undef, \%info);
 	}
 
-	my $res = _resolve_ms_probing($ms, %opts);
+	my $res = _resolve_ms_probing($ms, %helper);
 	if (! $res->{ok}) {
 		$info{errcode} = $res->{error};
 		$info{message} = $res->{message};
@@ -845,14 +869,21 @@ sub request
 
 	foreach my $attempt (1, 2) {
 		my ($url, $urlerr) = _sign_url($res->{baseurl}, $command, $tok->{token},
-		                               $tok->{user}, $res, %opts);
+		                               $tok->{user}, $res, %helper);
 		if (!$url) {
 			$info{errcode} = $urlerr->{error};
 			$info{message} = $urlerr->{message};
 			return (undef, \%info);
 		}
 
-		my ($code, $body, $status) = _call($url, %opts);
+		# Nur hier duerfen Methode und Rumpf mit - plus der Standard-Inhaltstyp
+		my %cmdopts = %opts;
+		if ( defined $cmdopts{method} and uc($cmdopts{method}) eq 'POST'
+		     and !defined $cmdopts{content_type} ) {
+			$cmdopts{content_type} = 'text/plain; charset=utf-8';
+		}
+
+		my ($code, $body, $status) = _call($url, %cmdopts);
 		if (!defined $code) {
 			$info{errcode} = 'unreachable';
 			$info{message} = "$res->{baseurl} did not answer";
@@ -867,7 +898,7 @@ sub request
 			# The token may have been deleted on the Miniserver although
 			# validUntil still looks fine. Fetch a new one and retry ONCE.
 			if ($attempt == 1) {
-				my $fresh = get_token($ms, %opts, force => 1);
+				my $fresh = get_token($ms, %helper, force => 1);
 				if ($fresh->{ok}) {
 					$tok = $fresh;
 					next;
