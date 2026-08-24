@@ -519,6 +519,48 @@ class TestFlows(unittest.TestCase):
         self.assertEqual(killopts["basicauth_password"], "TestPass!23")
         self.assertIsNone(auth._store_get_token("AB:CD:EF:01:02:03", "loxberry"))
 
+    def test_get_stays_default(self):
+        self._seed()
+        auth.request(1, "/jdev/sps/io/Test")
+        opts = [o for u, o in self.ms.optlog if "autht=" in u][0]
+        self.assertNotIn("method", opts)
+        self.assertNotIn("content", opts)
+
+    def test_post_with_body(self):
+        self._seed()
+        body = '556740899/{"userDefaultStructure":{},"ts":556740899}'
+        content, info = auth.request(1, "/jdev/sps/setusersettings",
+                                     method="POST", content=body)
+        self.assertEqual(info["error"], 0)
+        url, opts = [(u, o) for u, o in self.ms.optlog if "setusersettings" in u][0]
+        self.assertEqual(opts["method"], "POST")
+        self.assertEqual(opts["content"], body)
+        self.assertTrue(opts["content_type"].startswith("text/plain"))
+        self.assertRegex(url, r"\?autht=[0-9a-f]{64}&user=loxberry$")
+
+    def test_getkey2_stays_get_during_post(self):
+        # Der Kern: der Schluesselabruf darf nicht zum POST werden
+        self._seed()
+        auth.request(1, "/jdev/sps/setusersettings", method="POST", content="{}")
+        keyopts = [o for u, o in self.ms.optlog if "/jdev/sys/getkey2/" in u][0]
+        self.assertNotIn("method", keyopts)
+        self.assertNotIn("content", keyopts)
+
+    def test_post_custom_content_type(self):
+        self._seed()
+        auth.request(1, "/jdev/sps/setusersettings",
+                     method="POST", content="{}", content_type="application/json")
+        opts = [o for u, o in self.ms.optlog if "setusersettings" in u][0]
+        self.assertEqual(opts["content_type"], "application/json")
+
+    def test_post_retries_once_on_401(self):
+        self._seed()
+        self.ms.cmd_401_once = 1
+        content, info = auth.request(1, "/jdev/sps/setusersettings",
+                                     method="POST", content="{}")
+        self.assertEqual(info["error"], 0)
+        self.assertEqual(len(self._urls("/jdev/sys/gettoken/")), 1)
+
 
 class TestProcessCache(unittest.TestCase):
     def setUp(self):

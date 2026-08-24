@@ -378,7 +378,16 @@ def auth_method(ms) -> str:
 # ---------------------------------------------------------------------------
 def _http_get(url, **opts):
     """Returns (code, body, status). code is None when no connection happened."""
-    req = urllib.request.Request(url)
+    method = str(opts.get("method") or "GET").upper()
+    data = None
+    if method == "POST":
+        body = opts.get("content")
+        data = (body if body is not None else "").encode("utf-8")
+
+    req = urllib.request.Request(url, data=data, method=method)
+    if method == "POST":
+        req.add_header("Content-Type",
+                       opts.get("content_type") or "text/plain; charset=utf-8")
     if opts.get("basicauth_user") is not None:
         import base64
 
@@ -417,10 +426,20 @@ def _call_opts(opts):
     return dict((k, v) for k, v in opts.items() if k in _CALL_KEYS)
 
 
+# The command in request() may carry a method and a body; the helper calls
+# (cfg/api, getkey2, gettoken, ...) must not - a POSTed getkey2 does not return
+# the one-time key. They pass **_call_opts(opts) and therefore never carry one.
+_CMD_KEYS = _CALL_KEYS + ("method", "content", "content_type")
+
+
+def _cmd_opts(opts):
+    return dict((k, v) for k, v in opts.items() if k in _CMD_KEYS)
+
+
 def _call(url, **opts):
-    _dbg("GET %s" % url)
+    _dbg("%s %s" % (str(opts.get("method") or "GET").upper(), url))
     t = transport if transport else _http_get
-    return t(url, **_call_opts(opts))
+    return t(url, **_cmd_opts(opts))
 
 
 def _ll_value(body):
@@ -807,7 +826,12 @@ def request(ms, command, **opts):
             info["message"] = urlerr["message"]
             return (None, info)
 
-        code, body, status = _call(url, **opts)
+        # Nur hier duerfen Methode und Rumpf mit - plus Standard-Inhaltstyp
+        cmdopts = dict(opts)
+        if str(cmdopts.get("method") or "").upper() == "POST"                 and not cmdopts.get("content_type"):
+            cmdopts["content_type"] = "text/plain; charset=utf-8"
+
+        code, body, status = _call(url, **cmdopts)
         if code is None:
             info["errcode"] = "unreachable"
             info["message"] = "%s did not answer" % res["baseurl"]
