@@ -343,26 +343,42 @@ sub ensure_mosquitto_dropin
 	# NOTE: \${LBSTMPFSLOG} must stay literal - systemd expands it at runtime
 	# (via EnvironmentFile). The distro unit has no EnvironmentFile, so the
 	# drop-in must bring it, otherwise the variable would be empty.
+	#
+	# NOTE: every ExecStartPre carries the "+" prefix, which runs the command
+	# with full privileges regardless of what the base unit sets. A drop-in
+	# inherits the execution context of a unit LoxBerry does not control, and
+	# these commands need root: the tmpfs log directory belongs to
+	# loxberry:loxberry and is not group-writable, so creating mosquitto.log in
+	# it fails for anyone else, and chown may only be called by root at all.
+	# Debian's mosquitto package ships no User=, so there they happened to run
+	# as root; the Eclipse upstream unit sets User=mosquitto, and there the
+	# broker failed to start whenever the logfile was missing - after a
+	# dietpi-backup, which rebuilds the tmpfs (issue #1550). The old LoxBerry
+	# unit, which replaced the distro unit as a whole, had no User= either and
+	# so never needed this. "+" is a no-op where the commands would run as root
+	# anyway; it also lifts sandboxing (ProtectSystem= and friends).
 	my $want =
 		  "# Managed by LoxBerry - do not edit.\n"
 		. "# Extends the distro mosquitto.service with LoxBerry's tmpfs logfile and\n"
 		. "# createtmpfs boot-ordering. A drop-in survives mosquitto package upgrades.\n"
+		. "# The '+' prefix runs each command with full privileges - the base unit\n"
+		. "# may set User=mosquitto, which cannot write LoxBerry's log directory.\n"
 		. "[Unit]\n"
 		. "After=createtmpfs.service\n"
 		. "Requires=createtmpfs.service\n"
 		. "\n"
 		. "[Service]\n"
 		. "EnvironmentFile=/etc/environment\n"
-		. "ExecStartPre=/bin/mkdir -m 740 -p /var/log/mosquitto\n"
-		. "ExecStartPre=/bin/chown mosquitto /var/log/mosquitto\n"
-		. "ExecStartPre=/bin/touch \${LBSTMPFSLOG}/mosquitto.log\n"
-		. "ExecStartPre=/bin/chown mosquitto:loxberry \${LBSTMPFSLOG}/mosquitto.log\n"
+		. "ExecStartPre=+/bin/mkdir -m 740 -p /var/log/mosquitto\n"
+		. "ExecStartPre=+/bin/chown mosquitto /var/log/mosquitto\n"
+		. "ExecStartPre=+/bin/touch \${LBSTMPFSLOG}/mosquitto.log\n"
+		. "ExecStartPre=+/bin/chown mosquitto:loxberry \${LBSTMPFSLOG}/mosquitto.log\n"
 		# Group loxberry needs WRITE permission (660, not 640): log_maint.pl
 		# runs as user loxberry and truncates oversized logfiles in place
 		# (copytruncate). With 640 that truncate silently failed and
 		# mosquitto.log grew without limit while being re-gzipped hourly.
-		. "ExecStartPre=/bin/chmod 660 \${LBSTMPFSLOG}/mosquitto.log\n"
-		. "ExecStartPre=/bin/ln -sf \${LBSTMPFSLOG}/mosquitto.log /var/log/mosquitto/mosquitto.log\n";
+		. "ExecStartPre=+/bin/chmod 660 \${LBSTMPFSLOG}/mosquitto.log\n"
+		. "ExecStartPre=+/bin/ln -sf \${LBSTMPFSLOG}/mosquitto.log /var/log/mosquitto/mosquitto.log\n";
 
 	# Current content (if any)
 	my $have = "";
