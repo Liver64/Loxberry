@@ -98,6 +98,34 @@ if ( $info3->{error} == 0 ) {
 	print "FAIL request after refresh: " . ($info3->{errcode} // '?') . " - $info3->{message}\n";
 }
 
+print "\n=== POST: setusersettings (nur wenn der Benutzer keine Sortierung hat) ===\n";
+{
+	my ($cur) = LoxBerry::Auth::request($ms, '/jdev/sps/getusersettings');
+	my $curlen = defined $cur ? length($cur) : 0;
+	if ( $curlen > 50 ) {
+		print "SKIP Benutzer hat bereits eine Sortierung ($curlen Bytes) - wird nicht ueberschrieben\n";
+	}
+	else {
+		my $ts   = LoxBerry::System::epoch2lox();
+		my $body = $ts . '/{"userDefaultStructure":{},"ts":' . $ts . ',"audioZoneCustomization":{}}';
+		my ($resp, $pinfo) = LoxBerry::Auth::request($ms, '/jdev/sps/setusersettings',
+			method  => 'POST',
+			content => $body );
+		if ( $pinfo->{error} == 0 ) {
+			print "OK   POST setusersettings (code $pinfo->{code})\n";
+			my ($back) = LoxBerry::Auth::request($ms, '/jdev/sps/getusersettings');
+			my $ok = ( defined $back and index($back, $ts) >= 0 );
+			print $ok ? "OK   Gegenprobe: der geschriebene Zeitstempel kommt zurueck\n"
+			          : "FAIL Gegenprobe: Zeitstempel nicht gefunden\n";
+			$failed++ if (!$ok);
+		}
+		else {
+			$failed++;
+			print "FAIL POST: " . ($pinfo->{errcode} // '?') . " - $pinfo->{message}\n";
+		}
+	}
+}
+
 print "\n=== cleanup: kill_token ===\n";
 if ($keep) {
 	print "SKIP --keep given - the token stays on the Miniserver\n";
