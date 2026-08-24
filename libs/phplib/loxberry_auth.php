@@ -366,6 +366,15 @@ class LBAuth
 			curl_setopt($ch, CURLOPT_USERPWD, $opts['basicauth_user'] . ':'
 			            . (isset($opts['basicauth_password']) ? $opts['basicauth_password'] : ''));
 		}
+		$method = isset($opts['method']) ? strtoupper($opts['method']) : 'GET';
+		if ($method === 'POST') {
+			$ctype   = isset($opts['content_type']) ? $opts['content_type'] : 'text/plain; charset=utf-8';
+			$payload = isset($opts['content']) ? $opts['content'] : '';
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: ' . $ctype));
+		}
+
 		$body = curl_exec($ch);
 		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		$err  = curl_error($ch);
@@ -373,6 +382,15 @@ class LBAuth
 		// no connection at all -> code 0
 		if ($body === false || !$code) { return array(null, null, $err ? $err : 'no connection'); }
 		return array(intval($code), $body, strval($code));
+	}
+
+	// request() passes its options on to get_token, cfg/api and getkey2 as
+	// well. Without this filter a POST command would turn the key request into
+	// a POST too - and the Miniserver does not answer that with the key.
+	public static function _helper_opts($opts)
+	{
+		unset($opts['method'], $opts['content'], $opts['content_type']);
+		return $opts;
 	}
 
 	public static function _call($url, $opts = array())
@@ -709,7 +727,10 @@ class LBAuth
 	{
 		$info = array('code' => null, 'status' => null, 'error' => 1, 'message' => '', 'errcode' => null);
 
-		$tok = self::get_token($ms, $opts);
+		// method/content gehoeren nur an das Kommando, nicht an getkey2 & Co.
+		$helper = self::_helper_opts($opts);
+
+		$tok = self::get_token($ms, $helper);
 		if (!$tok['ok']) {
 			$info['errcode'] = $tok['error']; $info['message'] = $tok['message'];
 			return array(null, $info);
@@ -717,9 +738,9 @@ class LBAuth
 
 		$left = intval($tok['validUntil']) - epoch2lox();
 		if ($left <= 0) {
-			$tok = self::get_token($ms, array_merge($opts, array('force' => 1)));
+			$tok = self::get_token($ms, array_merge($helper, array('force' => 1)));
 		} elseif ($left < self::$REFRESH_THRESHOLD) {
-			$r = self::refresh_token($ms, $opts);
+			$r = self::refresh_token($ms, $helper);
 			if ($r['ok']) { $tok = $r; }
 		}
 		if (!$tok['ok']) {
@@ -727,20 +748,27 @@ class LBAuth
 			return array(null, $info);
 		}
 
-		$res = self::_resolve_ms_probing($ms, $opts);
+		$res = self::_resolve_ms_probing($ms, $helper);
 		if (!$res['ok']) {
 			$info['errcode'] = $res['error']; $info['message'] = $res['message'];
 			return array(null, $info);
 		}
 
 		for ($attempt = 1; $attempt <= 2; $attempt++) {
-			list($url, $urlerr) = self::_sign_url($res['baseurl'], $command, $tok['token'], $tok['user'], $res, $opts);
+			list($url, $urlerr) = self::_sign_url($res['baseurl'], $command, $tok['token'], $tok['user'], $res, $helper);
 			if (!$url) {
 				$info['errcode'] = $urlerr['error']; $info['message'] = $urlerr['message'];
 				return array(null, $info);
 			}
 
-			list($code, $body, $status) = self::_call($url, $opts);
+			// Nur hier duerfen Methode und Rumpf mit - plus Standard-Inhaltstyp
+			$cmdopts = $opts;
+			if (isset($cmdopts['method']) && strtoupper($cmdopts['method']) === 'POST'
+			    && !isset($cmdopts['content_type'])) {
+				$cmdopts['content_type'] = 'text/plain; charset=utf-8';
+			}
+
+			list($code, $body, $status) = self::_call($url, $cmdopts);
 			if ($code === null) {
 				$info['errcode'] = 'unreachable';
 				$info['message'] = $res['baseurl'] . ' did not answer';
@@ -753,7 +781,7 @@ class LBAuth
 				// The token may be gone on the Miniserver although validUntil
 				// still looks fine. Fetch a new one and retry ONCE.
 				if ($attempt == 1) {
-					$fresh = self::get_token($ms, array_merge($opts, array('force' => 1)));
+					$fresh = self::get_token($ms, array_merge($helper, array('force' => 1)));
 					if ($fresh['ok']) { $tok = $fresh; continue; }
 					$info['errcode'] = $fresh['error']; $info['message'] = $fresh['message'];
 					return array(null, $info);

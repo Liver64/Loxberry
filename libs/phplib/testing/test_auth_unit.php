@@ -470,6 +470,53 @@ t_is( $cc2['token'], 'cached2', 'put aktualisiert den Cache' );
 LBAuth::_store_del_token('AA:BB:CC:DD:EE:FF', 'cacheuser');
 t_is( LBAuth::_store_get_token('AA:BB:CC:DD:EE:FF', 'cacheuser'), null, 'del raeumt den Cache mit' );
 
+// --- POST-Unterstuetzung ---------------------------------------------------
+LBAuth::_cache_clear();
+LBAuth::_store_put_token('AB:CD:EF:01:02:03', 'loxberry',
+	array('msnr' => 1, 'name' => 'Miniserver', 'firmware' => '17.1.7.3'),
+	array('token' => 'tokTESTVALUE123', 'validUntil' => epoch2lox() + 60*86400,
+	      'rights' => 1924, 'perm' => 260, 'acquired' => 1, 'info' => 'x'));
+
+$optlog = array();
+LBAuth::request(1, '/jdev/sps/io/Test');
+$getopts = null;
+foreach ($optlog as $o) { if (strpos($o['url'], 'autht=') !== false) { $getopts = $o['opts']; } }
+t_ok( !isset($getopts['method']),  'ohne Option bleibt es ein GET' );
+t_ok( !isset($getopts['content']), 'ohne Option kein Rumpf' );
+
+$optlog = array();
+$postbody = '556740899/{"userDefaultStructure":{},"ts":556740899}';
+list($pc, $pi) = LBAuth::request(1, '/jdev/sps/setusersettings',
+	array('method' => 'POST', 'content' => $postbody));
+t_is( $pi['error'], 0, 'POST wird ausgefuehrt' );
+
+$postopts = null; $posturl = ''; $keyopts = null;
+foreach ($optlog as $o) {
+	if (strpos($o['url'], 'setusersettings') !== false)    { $postopts = $o['opts']; $posturl = $o['url']; }
+	if (strpos($o['url'], '/jdev/sys/getkey2/') !== false) { $keyopts  = $o['opts']; }
+}
+t_is( $postopts['method'],  'POST',    'Methode kommt am Transport an' );
+t_is( $postopts['content'], $postbody, 'Rumpf kommt unveraendert am Transport an' );
+t_ok( strpos($postopts['content_type'], 'text/plain') === 0, 'Standard-Inhaltstyp ist text/plain' );
+t_ok( preg_match('/\?autht=[0-9a-f]{64}&user=loxberry$/', $posturl), 'auch ein POST wird signiert' );
+
+// DER KERN: getkey2 darf dabei nicht zum POST werden
+t_ok( !isset($keyopts['method']),  'getkey2 bleibt ein GET, auch wenn das Kommando ein POST ist' );
+t_ok( !isset($keyopts['content']), 'getkey2 bekommt keinen Rumpf' );
+
+$optlog = array();
+LBAuth::request(1, '/jdev/sps/setusersettings',
+	array('method' => 'POST', 'content' => '{}', 'content_type' => 'application/json'));
+$jsonopts = null;
+foreach ($optlog as $o) { if (strpos($o['url'], 'setusersettings') !== false) { $jsonopts = $o['opts']; } }
+t_is( $jsonopts['content_type'], 'application/json', 'eigener Inhaltstyp wird durchgereicht' );
+
+$behaviour['cmd_401_once'] = 1;
+list($rc, $ri) = LBAuth::request(1, '/jdev/sps/setusersettings',
+	array('method' => 'POST', 'content' => '{}'));
+t_is( $ri['error'], 0, 'POST wird nach einem 401 wiederholt' );
+$behaviour['cmd_401_once'] = 0;
+
 echo "
 1..$count
 ";
