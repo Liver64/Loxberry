@@ -88,12 +88,9 @@ jobs:
           exempt-issue-milestones: "Later Feature"
 
           exempt-issue-labels: >-
-            Later Feature,
+            later,
             pinned,
-            SECURITY,
-            CRITICAL,
-            must have,
-            Announcement
+            security
 
           # Issues mit Bearbeiter gelten als "in Arbeit".
           exempt-all-issue-assignees: true
