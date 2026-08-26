@@ -33,17 +33,14 @@ table.menutable td {
   text-align: center;
   font-size: 0.8em;
   vertical-align: middle;
+  flex: 0 0 calc(33.3% - 10px);
+  min-width: 90px;
 }
 
 table.menutable tr {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-}
-
-table.menutable td {
-  flex: 0 0 calc(33.3% - 10px);
-  min-width: 90px;
 }
 
 .caption {
@@ -480,9 +477,6 @@ a.nolinkstyle:active
 	background-color: #EEEEEE !important;
 	color:black !important;
 	text-shadow: none !important;
-}
-
-.ui-slider-track {
 	z-index:2;
 }
 
