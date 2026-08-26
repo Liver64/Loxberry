@@ -39,7 +39,6 @@ $ua->ssl_opts( SSL_verify_mode => 0, verify_hostname => 0 );
 
 $R::useclouddns if (0);
 $R::ip if (0);
-$R::get_hostport if(0);
 $R::preferhttps if (0);
 
 # Check if ip format is IPv6

@@ -180,9 +180,13 @@ else {
 # symlinks) and require the real path to stay inside one of those bases. On
 # rejection behave exactly like "file not found" so nothing is leaked about what
 # exists outside.
+# /var/log is included because $lbhomedir/log contains LoxBerry-managed
+# symlinks into it (e.g. system_tmpfs/apache2 -> /var/log/apache2); abs_path
+# resolves those symlinks, so without this base legitimate logs were rejected
+# (issue #1555).
 my $real = Cwd::abs_path("$R::logfilepath/$R::logfile");
 my @allowed_bases = map { Cwd::abs_path($_) // $_ }
-	("/tmp", "$lbhomedir/log", "$lbhomedir/webfrontend/html/tmp", "$lbhomedir/data");
+	("/tmp", "$lbhomedir/log", "$lbhomedir/webfrontend/html/tmp", "$lbhomedir/data", "/var/log");
 unless ( defined($real) && grep { $real eq $_ || index($real, "$_/") == 0 } @allowed_bases ) {
 	if ($iscgi && $maintemplate) {
 		$maintemplate->param('NOLOGFILE', 1);

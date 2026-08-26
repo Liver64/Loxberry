@@ -199,6 +199,40 @@ if ( ! -e "$lbsconfigdir/is_raspberry.cfg" ) {
 	LOGINF "is_raspberry.cfg already present - nothing to do.";
 }
 
+# --- Apache access-control fix (issue #1555) ---
+#
+# webfrontend/htmlauth/.htaccess mixed old-style (Order/Allow, mod_access_compat)
+# and new-style (Require valid-user) directives via "Satisfy Any" - a documented
+# Apache 2.4 anti-pattern. In practice it caused intermittent AH01797 denials
+# from mod_access_compat, hitting the Logmanager's own live-refresh ajax poll
+# (and other background pollers) hardest, since every denial is itself logged
+# to the file being watched - the polled file grows without bound while the
+# Logmanager is left open. Verified live on a test system: after switching to
+# plain Require/<RequireAny>, the denials stopped immediately.
+#
+# The same mixed pattern also existed in the vhost Directory blocks and in the
+# shellinabox (web terminal) proxy config, so all three are replaced here.
+# .htaccess itself needs no explicit copy - webfrontend/ is not excluded from
+# the update rsync and arrives with the release as usual. system/ is excluded
+# (update-exclude.system), so these three files must be copied explicitly.
+LOGINF "Installing fixed Apache access-control config (system/ is excluded from rsync)...";
+copy_to_loxberry('/system/apache2/sites-available/000-default.conf');
+copy_to_loxberry('/system/apache2/sites-available/001-default-ssl.conf');
+copy_to_loxberry('/system/apache2/conf-available/shellinabox.conf');
+execute( command => "dos2unix $lbhomedir/system/apache2/sites-available/000-default.conf $lbhomedir/system/apache2/sites-available/001-default-ssl.conf $lbhomedir/system/apache2/conf-available/shellinabox.conf", log => $log, ignoreerrors => 1 );
+
+# Apply immediately rather than waiting for the next reboot - configtest first
+# so a broken config is never reloaded into a running server.
+my $apache_configtest = qx { /usr/sbin/apache2ctl configtest 2>&1 };
+if ( $? == 0 ) {
+	LOGINF "Apache config OK - reloading...";
+	execute( command => "systemctl reload apache2.service", log => $log, ignoreerrors => 1 );
+	LOGOK "Apache reloaded with the fixed access-control config.";
+} else {
+	LOGERR "Apache configtest failed after installing the access-control fix - not reloading, the previous config stays active. Output: $apache_configtest";
+	$errors++;
+}
+
 LOGOK "Update script $0 finished." if ( $errors == 0 );
 LOGERR "Update script $0 finished with errors." if ( $errors != 0 );
 

@@ -9,6 +9,11 @@ use File::Find::Rule;
 my $version = "3.0.0.0";
 my $log;
 
+# Tracks our own cloudflared instance, so start/stop/status never touch a
+# tunnel started by anything else on the box (see issue #1558).
+my $pidfile = "/dev/shm/remoteconnect.pid";
+my $cfdlog  = "/dev/shm/remoteconnect.log";
+
 # Commandline parameters
 my $command = $ARGV[0];
 $command = "none" if !$ARGV[0];
@@ -50,18 +55,22 @@ if ($command eq "start") {
 		exit (1);
 	}
 	LOGINF "Using Cloudflare daemon: $cloudflared";
-	&killcfd;
-	unlink('/tmp/remoteconnect.log');
-	my ($exitcode) = execute { command => "$cloudflared --url http://" . LoxBerry::System::get_localip() . ":" . LoxBerry::System::lbwebserverport() . " > /tmp/remoteconnect.log 2>&1 &" };
+	&stopcfd;
+	unlink($cfdlog);
+	my $url = "http://" . LoxBerry::System::get_localip() . ":" . LoxBerry::System::lbwebserverport();
+	# Run through a shell that execs into cloudflared, so the PID the shell
+	# writes to $pidfile stays valid for the daemon itself (exec replaces the
+	# process image without allocating a new PID).
+	my ($exitcode) = execute { command => "sh -c 'echo \$\$ > $pidfile; exec $cloudflared --url $url > $cfdlog 2>&1' &" };
 	if ($exitcode != 0) {
 		LOGERR "Could not start Cloudflare Daemon. Exitcode: $exitcode";
-		&killcfd;
+		&stopcfd;
 		exit (1);
 	}
 	my $remoteurl = &remoteurl();
 	if (!$remoteurl) {
 		LOGERR "Could not get remote URL from Cloudflare. Giving up.";
-		&killcfd;
+		&stopcfd;
 		exit (1);
 	} else {
 		LOGOK "Connected to Cloudflare. Remote URL is: $remoteurl";
@@ -101,10 +110,10 @@ if ($command eq "stop") {
 
 	# Connect
 	LOGINF "Disconnect from Cloudflare Service...";
-	&killcfd;
+	&stopcfd;
 	my $loxberryid = LoxBerry::System::read_file("$lbsconfigdir/loxberryid.cfg");
 	my ($exitcode) = execute { command => "curl -k --connect-timeout 5 --max-time 5 --retry 2 -s -L \"https://www.loxberry.de/supportvpn/register.cgi?id=$loxberryid&do=unregister\"" };
-	unlink('/tmp/remoteconnect.log');
+	unlink($cfdlog);
 	unlink("$lbslogdir/remote.autoconnect");
 	exit (0);
 
@@ -116,9 +125,9 @@ if ($command eq "stop") {
 if ($command eq "status") {
 
 	my $remoteurl = &remoteurl();
-	my ($exitcode,$output) = execute { command => "pgrep cloudflared" };
+	my $running = &trackedpid();
 
-	if ($remoteurl && $exitcode eq 0) {
+	if ($remoteurl && $running) {
 		# my ($exitcode,$output) = execute { command => "curl --connect-timeout 5 --max-time 5 --retry 2 -s -I $remoteurl" };
 		# if ($exitcode eq 0 && $output =~ /HTTP.*200/) {
 			print "$remoteurl";
@@ -137,11 +146,11 @@ exit;
 #
 sub remoteurl {
 	my $remoteurl;
-	if (!-e "/tmp/remoteconnect.log") {
+	if (!-e $cfdlog) {
 		return;
 	}
 	for(my $i = 1;$i <= 120;$i++) {
-		$remoteurl = `cat /tmp/remoteconnect.log | awk '/.*https.*trycloudflare\\.com.*/ {print \$4}'`;
+		$remoteurl = `cat $cfdlog | awk '/.*https.*trycloudflare\\.com.*/ {print \$4}'`;
 		chomp ($remoteurl);
 		if ($remoteurl =~ /^https.*/) {
 			last;
@@ -167,8 +176,41 @@ sub cloudflaredbin {
 	return;
 }
 
-sub killcfd {
-	my ($exitcode) = execute { command => "pkill cloudflared" };
+
+# Returns the PID from $pidfile if it is still alive and is actually
+# cloudflared, undef otherwise. A bare PID match is not enough - PIDs get
+# reused, so a stale file could otherwise point at an unrelated process.
+sub trackedpid {
+	return unless -e $pidfile;
+	my $pid = LoxBerry::System::read_file($pidfile);
+	return unless defined $pid;
+	$pid =~ s/\s+//g;
+	return unless $pid =~ /^\d+$/;
+	return unless -d "/proc/$pid";
+	my $exe = readlink("/proc/$pid/exe");
+	return unless defined $exe && $exe =~ m{(^|/)cloudflared$};
+	return $pid;
+}
+
+# Stops only the cloudflared instance we started ourselves, identified via
+# $pidfile. Never touches other cloudflared processes on the box (issue #1558).
+# A missing or stale PID file is treated as "not running" - no pkill fallback.
+sub stopcfd {
+	my $pid = &trackedpid();
+	if ($pid) {
+		LOGINF "Sending SIGTERM to cloudflared PID $pid";
+		kill 'TERM', $pid;
+		# Poll up to 3 s for graceful exit (6 x 0.5 s)
+		for (1..6) {
+			last unless -d "/proc/$pid";
+			select(undef, undef, undef, 0.5);
+		}
+		if (-d "/proc/$pid") {
+			LOGWARN "cloudflared still alive after SIGTERM - sending SIGKILL to PID $pid";
+			kill 'KILL', $pid;
+		}
+	}
+	unlink($pidfile);
 	unlink("$lbslogdir/remote.autoconnect");
 	return();
 }
