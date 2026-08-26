@@ -1,0 +1,9 @@
+version: 2
+
+secret:
+  # These are hardcoded test fixtures used to verify LoxBerry::Auth /
+  # auth.py hashing functions against fixed reference values. They are
+  # not real credentials. See issue #1556.
+  ignored_paths:
+    - 'libs/perllib/t/auth_pure.t'
+    - 'libs/pythonlib/testing/test_auth_unit.py'
