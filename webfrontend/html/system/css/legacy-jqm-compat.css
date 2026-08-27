@@ -18,7 +18,15 @@
    1. Page / body wrappers
    ============================================================ */
 
-html.ui-mobile body[class*="theme-"] .ui-page,
+/* Top-level jQM page is structural and must not cover body-level theme
+   backgrounds such as Liquid Glass wallpapers. */
+html.ui-mobile body[class*="theme-"] .ui-page {
+	background-image: none !important;
+	background-color: transparent !important;
+	color: var(--lb-text, inherit) !important;
+	text-shadow: none !important;
+}
+
 html.ui-mobile body[class*="theme-"] .ui-content,
 html.ui-mobile body[class*="theme-"] .ui-panel,
 html.ui-mobile body[class*="theme-"] .ui-panel-wrapper,
@@ -127,9 +135,14 @@ html.ui-mobile body[class*="theme-"] .ui-select select {
 
 html.ui-mobile body[class*="theme-"] .ui-input-text:focus-within,
 html.ui-mobile body[class*="theme-"] .ui-input-search:focus-within,
-html.ui-mobile body[class*="theme-"] .ui-select .ui-btn:focus {
+html.ui-mobile body[class*="theme-"] .ui-textinput:focus-within {
 	border-color: var(--lb-focus-border, var(--lb-input-focus-border, var(--lb-primary, #007aff))) !important;
 	box-shadow: 0 0 0 3px var(--lb-focus-ring, rgba(0,122,255,.18)) !important;
+}
+
+html.ui-mobile body[class*="theme-"] .ui-select .ui-btn:focus {
+	border-color: var(--lb-focus-border, var(--lb-input-focus-border, var(--lb-primary, #007aff))) !important;
+	box-shadow: none !important;
 }
 
 html.ui-mobile body[class*="theme-"] .ui-select select option {
@@ -144,6 +157,11 @@ html.ui-mobile body[class*="theme-"] .ui-select select option {
    layer but hide its own text, surface and arrow so only jQM renders visibly. */
 html.ui-mobile body[class*="theme-"] .lb-content .ui-select {
 	position: relative;
+	padding: 0 !important;
+	border: 0 !important;
+	background: transparent !important;
+	background-image: none !important;
+	box-shadow: none !important;
 }
 
 html.ui-mobile body[class*="theme-"] .lb-content .ui-select select {
