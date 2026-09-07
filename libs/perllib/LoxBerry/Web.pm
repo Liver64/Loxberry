@@ -15,7 +15,7 @@ use CGI::Carp qw(fatalsToBrowser set_message);
 set_message('Depending of what you have done, report this error to the plugin developer or the LoxBerry-Core team.<br>Further information you may find in the error logs.');
 
 package LoxBerry::Web;
-our $VERSION = "3.0.0.6";
+our $VERSION = "3.0.0.7";
 our $DEBUG;
 
 use base 'Exporter';
@@ -137,10 +137,28 @@ sub head
 	$headobj->param( IS_CORE_PAGE => $systemcall ? 1 : 0 );
 	$headobj->param( LOAD_JQM     => (!$systemcall && !$nojqm) ? 1 : 0 );
 
+	# Cache-busting versions are derived from the current file metadata.
+	# Using mtime + size avoids manual v=23/v=24 bumps while keeping the
+	# calculation cheap enough to run for every rendered header.
+	my $asset_version = sub {
+		my ($path) = @_;
+		my @stat = stat($path);
+		return @stat ? "$stat[9]-$stat[7]" : '0';
+	};
+
+	$headobj->param( LOXBERRY_CSS_VERSION  => $asset_version->("$LoxBerry::System::lbshtmldir/scripts/jquery/themes/main/loxberry.css") );
+	$headobj->param( DESIGN_TOKENS_VERSION => $asset_version->("$LoxBerry::System::lbshtmldir/css/design-tokens.css") );
+	$headobj->param( MAIN_CSS_VERSION      => $asset_version->("$LoxBerry::System::lbshtmldir/css/main.css") );
+	$headobj->param( COMPONENTS_VERSION    => $asset_version->("$LoxBerry::System::lbshtmldir/css/components.css") );
+	$headobj->param( LEGACY_JQM_VERSION    => $asset_version->("$LoxBerry::System::lbshtmldir/css/legacy-jqm-compat.css") );
+	$headobj->param( UTILITIES_VERSION     => $asset_version->("$LoxBerry::System::lbshtmldir/css/utilities.css") );
+	$headobj->param( TABLE_SORT_VERSION    => $asset_version->("$LoxBerry::System::lbshtmldir/scripts/lb-table-sort.js") );
+
 	# Theme support
 	my $theme = $LoxBerry::System::lbtheme // 'soft-rounded';
 	my $theme_file;
 	my $theme_url;
+	my $theme_fs;
 
 	# User themes may appear in two notations during the transition:
 	# - stored LoxBerry theme id: user-<slug>
@@ -154,6 +172,7 @@ sub head
 		my $user_theme_fs = "$LoxBerry::System::lbhomedir/data/plugins/cssframework/themes/theme-$theme.css";
 
 		if (-f $user_theme_fs && -r $user_theme_fs && !-l $user_theme_fs) {
+			$theme_fs = $user_theme_fs;
 			$theme_url = "/admin/system/theme-file.cgi/theme-$theme.css";
 			# Compatibility for custom/older head templates that still prepend
 			# /system/css/ to THEME_FILE.
@@ -169,13 +188,16 @@ sub head
 		# as a compatibility fallback for transitional installations.
 		my $core_theme_file = "themes/theme-$theme.css";
 		if (-f "$LoxBerry::System::lbshtmldir/css/$core_theme_file" && -r "$LoxBerry::System::lbshtmldir/css/$core_theme_file") {
+			$theme_fs = "$LoxBerry::System::lbshtmldir/css/$core_theme_file";
 			$theme_file = $core_theme_file;
 			$theme_url = "/system/css/$core_theme_file";
 		} elsif (-f "$LoxBerry::System::lbshtmldir/css/theme-$theme.css" && -r "$LoxBerry::System::lbshtmldir/css/theme-$theme.css") {
+			$theme_fs = "$LoxBerry::System::lbshtmldir/css/theme-$theme.css";
 			$theme_file = "theme-$theme.css";
 			$theme_url = "/system/css/theme-$theme.css";
 		} else {
 			$theme = 'soft-rounded';
+			$theme_fs = "$LoxBerry::System::lbshtmldir/css/themes/theme-soft-rounded.css";
 			$theme_file = 'themes/theme-soft-rounded.css';
 			$theme_url = '/system/css/themes/theme-soft-rounded.css';
 		}
@@ -184,6 +206,7 @@ sub head
 	$headobj->param( THEME_CLASS => "theme-$theme" );
 	$headobj->param( THEME_FILE => $theme_file );
 	$headobj->param( THEME_URL => $theme_url );
+	$headobj->param( THEME_VERSION => $asset_version->($theme_fs) );
 
 	print "Content-Type: text/html; charset=utf-8\n\n";
 
