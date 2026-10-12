@@ -559,6 +559,36 @@ body.theme-dark .mqttgw-filter-input {
   border-color: var(--lb-gray-300);
 }
 
+body.theme-dark .mqttgw-traffic-value,
+body.theme-dark .mqttgw-traffic-detail pre {
+  color: var(--lb-text, #e6e6e6);
+}
+
+/* Group headers and the search box have a light background in every theme,
+   so their text must be dark regardless of the theme's global text colour.
+   (Not scoped to a theme class: the dark-theme selector is not reliable.) */
+.mqttgw-tgroup > summary,
+.mqttgw-tgroup > summary strong {
+  color: #333 !important;
+}
+
+input.mqttgw-traffic-search,
+#v2-http-search,
+#v2-udp-search {
+  background: #fff !important;
+  color: #333 !important;
+  -webkit-text-fill-color: #333;
+  caret-color: #333;
+  border: 1px solid var(--lb-gray-300, #ccc) !important;
+}
+input.mqttgw-traffic-search::placeholder,
+#v2-http-search::placeholder,
+#v2-udp-search::placeholder {
+  color: #777 !important;
+  -webkit-text-fill-color: #777;
+  opacity: 1;
+}
+
 body.theme-dark .mqttgw-topic-ms {
   background: var(--lb-gray-100);
   color: var(--lb-gray-700);
@@ -740,6 +770,8 @@ body.theme-dark .mqttgw-topic-ms {
   border: var(--lb-border);
   border-radius: var(--lb-radius);
   font-size: var(--lb-font-sm);
+  background: #fff;
+  color: #333;
 }
 
 .mqttgw-chip-row {
@@ -832,7 +864,7 @@ body.theme-dark .mqttgw-topic-ms {
   font-family: var(--lb-font);
   font-size: var(--lb-font-sm);
   font-weight: 700;
-  color: var(--lb-gray-800);
+  color: var(--lb-text, #333);
   cursor: pointer;
   list-style: none;
   border-bottom: 1px solid var(--lb-gray-200);
@@ -860,7 +892,7 @@ body.theme-dark .mqttgw-topic-ms {
    the row instead of overflowing. */
 .mqttgw-traffic-row {
   display: grid;
-  grid-template-columns: 16px minmax(0,1fr) minmax(0,1fr) 240px 22px minmax(40px,auto) 76px 44px;
+  grid-template-columns: 16px minmax(0, min(var(--mqttgw-vi-w, 30%), 40%)) minmax(0, min(var(--mqttgw-topic-w, 30%), 40%)) minmax(80px, 1fr) 22px minmax(40px,auto) 76px 44px;
   align-items: start;
   gap: 6px;
   padding: 5px 10px;
@@ -871,7 +903,7 @@ body.theme-dark .mqttgw-topic-ms {
 
 /* UDP row uses the same column layout (HTTP code never applied to UDP). */
 .mqttgw-traffic-row-udp {
-  grid-template-columns: 16px minmax(0,1fr) minmax(0,1fr) 240px 22px minmax(40px,auto) 76px 44px;
+  grid-template-columns: 16px minmax(0, min(var(--mqttgw-vi-w, 30%), 40%)) minmax(0, min(var(--mqttgw-topic-w, 30%), 40%)) minmax(80px, 1fr) 22px minmax(40px,auto) 76px 44px;
 }
 
 .mqttgw-tgroup > .mqttgw-traffic-row:last-of-type {
@@ -879,7 +911,8 @@ body.theme-dark .mqttgw-topic-ms {
 }
 
 .mqttgw-tgroup .mqttgw-traffic-row:hover {
-  background: var(--lb-gray-50);
+  /* translucent overlay: visible on light and dark rows, keeps text colour readable */
+  background: rgba(128, 128, 128, 0.18);
 }
 
 .mqttgw-traffic-icon {
@@ -918,7 +951,7 @@ body.theme-dark .mqttgw-topic-ms {
   font-family: var(--lb-font-mono);
   font-size: 11px;
   word-break: break-all;
-  color: var(--lb-gray-800);
+  color: var(--lb-text, #333);
   line-height: 1.4;
 }
 
@@ -954,7 +987,7 @@ body.theme-dark .mqttgw-topic-ms {
 .mqttgw-traffic-cmd-text {
   font-family: var(--lb-font-mono);
   font-size: 11px;
-  color: var(--lb-gray-800);
+  color: var(--lb-text, #333);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -995,7 +1028,7 @@ body.theme-dark .mqttgw-topic-ms {
 .mqttgw-traffic-value {
   font-family: var(--lb-font-mono);
   font-size: 11px;
-  color: var(--lb-gray-700);
+  color: var(--lb-text, #333);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1019,8 +1052,8 @@ body.theme-dark .mqttgw-topic-ms {
   padding: 10px 34px 10px 12px;
   border: 1px solid var(--lb-border-color, var(--lb-gray-200));
   border-radius: var(--lb-radius);
-  background: var(--lb-card-bg, #fff);
-  color: var(--lb-gray-800);
+  background: var(--lb-input-bg, #fff);
+  color: var(--lb-input-text, var(--lb-text, #333));
 }
 
 .mqttgw-traffic-detail pre {
@@ -1031,6 +1064,7 @@ body.theme-dark .mqttgw-topic-ms {
   white-space: pre-wrap;
   word-break: break-all;
   overflow-wrap: anywhere;
+  user-select: text;
   font-family: var(--lb-font-mono);
   font-size: 11px;
   line-height: 1.45;

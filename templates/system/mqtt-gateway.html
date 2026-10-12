@@ -2145,14 +2145,52 @@ $(function () {
                        grp: grp, short: short});
         }
       });
+      updateColumnWidths();
       renderBoth();
+    });
+  }
+
+  // Size the VI/command and topic columns to their content (+ a little slack);
+  // the value column takes the rest. Rows are separate grids, so the widths
+  // are measured once here and shared via CSS custom properties.
+  function updateColumnWidths() {
+    var ctx = document.createElement('canvas').getContext('2d');
+    var monoFont = '11px ' + (getComputedStyle(document.documentElement)
+                     .getPropertyValue('--lb-font-mono').trim() || 'monospace');
+    var textFont = 'italic 11px ' + (getComputedStyle(document.documentElement)
+                     .getPropertyValue('--lb-font').trim() || 'sans-serif');
+    var maxVi = 0, maxCmd = 0, maxTopic = 0;
+    function w(font, s) { ctx.font = font; return ctx.measureText(s).width; }
+    viRows.forEach(function (r) {
+      maxVi = Math.max(maxVi, w(monoFont, r.vi));
+      maxCmd = Math.max(maxCmd, w(monoFont,
+        'MQTT:\\i' + (r.jp ? r.topic + '/' + r.jp : r.topic) + '=\\i\\v'));
+      maxTopic = Math.max(maxTopic, w(textFont,
+        r.topic + (r.jp ? ' • ' + r.jp : '')));
+    });
+    // + copy button (~24px) + gap + extra breathing room
+    var viW    = Math.ceil(maxVi + 56) + 'px';
+    var cmdW   = Math.ceil(maxCmd + 56) + 'px';
+    var topicW = Math.ceil(maxTopic + 40) + 'px';
+    [['v2-http-panel', viW], ['v2-udp-panel', cmdW]].forEach(function (p) {
+      var el = document.getElementById(p[0]);
+      if (!el) return;
+      el.style.setProperty('--mqttgw-vi-w', p[1]);
+      el.style.setProperty('--mqttgw-topic-w', topicW);
     });
   }
 
   function poll() {
     $.get('ajax/ajax-mqtt.php', {ajax: 'get_status_v2'}, function (resp) {
       v2St = resp || {};
-      renderBoth();
+      // Keep selected detail text stable while the user is copying it. The
+      // newest status is already cached and is rendered on the next poll.
+      if (useHttp && !detailHasSelection('http')) {
+        renderPanel('http', httpFilter, httpSearch);
+      }
+      if (useUdp && !detailHasSelection('udp')) {
+        renderPanel('udp', udpFilter, udpSearch);
+      }
     }).always(function () {
       pollTimer = setTimeout(poll, 3000);
     });
@@ -2241,6 +2279,28 @@ $(function () {
     }
   }
 
+  function detailHasSelection(transport) {
+    if (!window.getSelection) return false;
+    var selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.rangeCount) return false;
+
+    var detail = document.querySelector('#v2-' + transport + '-content .mqttgw-traffic-detail');
+    if (!detail) return false;
+    return (selection.anchorNode && detail.contains(selection.anchorNode)) ||
+           (selection.focusNode && detail.contains(selection.focusNode));
+  }
+
+  function findValueDetail($content, vi) {
+    var $match = $();
+    $content.find('.mqttgw-traffic-detail').each(function () {
+      if ($(this).attr('data-detail-vi') === vi) {
+        $match = $(this);
+        return false;
+      }
+    });
+    return $match;
+  }
+
   function renderPanel(transport, filter, search) {
     var isHttp = (transport === 'http');
     var getSc  = isHttp ? httpSc : udpSc;
@@ -2285,9 +2345,15 @@ $(function () {
       groups[r.grp].push(r);
     });
 
+    var $content = $('#v2-' + transport + '-content');
+    var $oldDetail = $content.find('.mqttgw-traffic-detail').first();
+    var oldDetailVi = $oldDetail.attr('data-detail-vi') || '';
+    var oldDetailText = $oldDetail.find('pre').text();
+    var oldDetailScrollTop = $oldDetail.find('pre').scrollTop() || 0;
+
     // Zustand (offen/zu) vor Re-Render speichern
     var savedClosed = {};
-    $('#v2-' + transport + '-content .mqttgw-tgroup').each(function () {
+    $content.find('.mqttgw-tgroup').each(function () {
       if (!this.open) savedClosed[$(this).data('grp')] = true;
     });
 
@@ -2371,10 +2437,31 @@ $(function () {
         html += '</details>';
       });
     }
-    $('#v2-' + transport + '-content').html(html);
+    // Preserve an unchanged open detail node. This keeps its scroll position
+    // and avoids replacing selectable text on every three-second poll.
+    var $preservedDetail = $();
+    if ($oldDetail.length && oldDetailVi === openValueDetail[transport]) {
+      var currentEntry = v2St[oldDetailVi];
+      var currentText = currentEntry && currentEntry.value != null
+                      ? formatTrafficValue(currentEntry.value) : null;
+      if (currentText !== null && currentText === oldDetailText) {
+        $preservedDetail = $oldDetail.detach();
+      }
+    }
+
+    $content.html(html);
+
+    if (oldDetailVi) {
+      var $newDetail = findValueDetail($content, oldDetailVi);
+      if ($preservedDetail.length && $newDetail.length) {
+        $newDetail.replaceWith($preservedDetail);
+      } else if ($newDetail.length) {
+        $newDetail.find('pre').scrollTop(oldDetailScrollTop);
+      }
+    }
 
     // Gespeicherten Zustand wiederherstellen
-    $('#v2-' + transport + '-content .mqttgw-tgroup').each(function () {
+    $content.find('.mqttgw-tgroup').each(function () {
       if (savedClosed[$(this).data('grp')]) this.open = false;
     });
   }
@@ -2444,7 +2531,7 @@ $(function () {
     e.preventDefault();
     e.stopPropagation();
     var transport = $(this).closest('#v2-http-content').length ? 'http' : 'udp';
-    var vi = String($(this).data('vi') || '');
+    var vi = $(this).attr('data-vi') || '';
     if (!vi) return;
     openValueDetail[transport] = openValueDetail[transport] === vi ? null : vi;
     if (transport === 'http') renderPanel('http', httpFilter, httpSearch);
