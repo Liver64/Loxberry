@@ -2165,6 +2165,14 @@ $(function () {
     });
   }
 
+  // Re-measure once web fonts are loaded: before that the canvas measures
+  // with fallback fonts and the columns could come out too narrow/wide.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () {
+      if (viRows.length) updateColumnWidths();
+    });
+  }
+
   // Size the VI/command and topic columns to their content (+ a little slack);
   // the value column takes the rest. Rows are separate grids, so the widths
   // are measured once here and shared via CSS custom properties.
@@ -2417,7 +2425,7 @@ $(function () {
                        + (hasVal ? ' mqttgw-traffic-value-has-full' : '')
                        + (valueOpen ? ' mqttgw-traffic-value-open' : '');
           var valueTitle = hasVal ? ' title="' + esc(_lang.valueDetailHint) + '"' : '';
-          var valueData = hasVal ? ' data-vi="' + esc(r.vi) + '"' : '';
+          var valueData = hasVal ? ' data-vi="' + esc(r.vi) + '" tabindex="0" role="button" aria-expanded="' + (valueOpen ? 'true' : 'false') + '"' : '';
           var valDisp = hasVal ? esc(val) : '&mdash;';
           html += '<div class="' + rowCls + '">';
           html += '<img src="' + _iconImg[sc] + '" class="mqttgw-traffic-icon" title="' + esc(_titles[sc]) + '" width="14" height="14">';
@@ -2532,7 +2540,7 @@ $(function () {
     e.preventDefault();
     e.stopPropagation();
     var $b = $(this);
-    var vi = $b.data('resend');
+    var vi = $b.attr('data-resend');
     if (!vi) return;
     $.post('ajax/ajax-mqtt.php', {ajax: 'resend_one', udpinport: udpinport, vi: vi}, function () {
       $b.addClass('mqttgw-resend-ok');
@@ -2540,17 +2548,35 @@ $(function () {
     });
   });
 
-  // Double-click a value to toggle its formatted/raw detail panel.
-  // CSS disables selection on clickable values, so a double-click does not mark a word.
-  $('#v2-http-content, #v2-udp-content').on('dblclick', '.mqttgw-traffic-value-has-full', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    var transport = $(this).closest('#v2-http-content').length ? 'http' : 'udp';
-    var vi = $(this).attr('data-vi') || '';
+  // Double-click (or Enter/Space when focused) toggles a value's formatted/raw
+  // detail panel. CSS disables selection on clickable values, so a double-click
+  // does not mark a word.
+  function toggleValueDetail(el) {
+    var transport = $(el).closest('#v2-http-content').length ? 'http' : 'udp';
+    var vi = $(el).attr('data-vi') || '';
     if (!vi) return;
     openValueDetail[transport] = openValueDetail[transport] === vi ? null : vi;
     if (transport === 'http') renderPanel('http', httpFilter, httpSearch);
     else renderPanel('udp', udpFilter, udpSearch);
+    // The panel is re-rendered: put keyboard focus back on the same value.
+    var $content = $(transport === 'http' ? '#v2-http-content' : '#v2-udp-content');
+    $content.find('.mqttgw-traffic-value-has-full').filter(function () {
+      return $(this).attr('data-vi') === vi;
+    }).first().trigger('focus');
+  }
+
+  $('#v2-http-content, #v2-udp-content').on('dblclick', '.mqttgw-traffic-value-has-full', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleValueDetail(this);
+  });
+
+  $('#v2-http-content, #v2-udp-content').on('keydown', '.mqttgw-traffic-value-has-full', function (e) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleValueDetail(this);
+    }
   });
 
   $('#v2-http-content, #v2-udp-content').on('click', '.mqttgw-traffic-detail-close', function (e) {
@@ -2565,7 +2591,7 @@ $(function () {
   $(document).on('click', '.mqttgw-copy-btn', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    var txt = $(this).data('copy');
+    var txt = $(this).attr('data-copy');
     var btn = this;
     var isIcon = $(btn).hasClass('mqttgw-copy-icon');
     var origHtml = isIcon ? $(btn).html() : null;

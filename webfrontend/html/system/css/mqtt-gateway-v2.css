@@ -1042,6 +1042,12 @@ body.theme-dark .mqttgw-topic-ms {
   user-select: none;
 }
 
+.mqttgw-traffic-value-has-full:focus-visible {
+  outline: 2px solid var(--lb-primary, #6dac20);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
 .mqttgw-traffic-value-open {
   font-weight: 600;
 }
