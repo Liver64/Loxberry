@@ -1087,7 +1087,9 @@ body.theme-dark .mqttgw-topic-ms {
   border: 1px solid transparent;
   border-radius: var(--lb-radius-sm, 4px);
   background: transparent;
-  color: var(--lb-gray-600);
+  /* follow the panel's text colour so the X is visible on light and dark panels */
+  color: inherit;
+  opacity: 0.8;
   font: inherit;
   font-size: 18px;
   line-height: 20px;
@@ -1099,6 +1101,7 @@ body.theme-dark .mqttgw-topic-ms {
   border-color: var(--lb-gray-300);
   background: var(--lb-gray-100);
   color: var(--lb-gray-900);
+  opacity: 1;
   outline: none;
 }
 
