@@ -1,4 +1,5 @@
 #!/bin/bash
+# Version: 4.0.1.21 - Set permissions for flat user theme storage.
 
 if test $UID -ne 0; then
 	echo "This script has to be run as root. Exiting."
@@ -65,6 +66,15 @@ chmod -c 644 $LBHOMEDIR/system/profile/loxberry.sh
 chmod -c 644 $LBHOMEDIR/system/logrotate/*
 chmod -c 644 $LBHOMEDIR/system/cron/cron.d/*
 chmod -c 644 $LBHOMEDIR/config/system/general.*
+
+# User themes use flat writable directories; shipped core CSS remains in the public core tree.
+mkdir -p "$LBHOMEDIR/config/system/themes" "$LBHOMEDIR/data/system/themes"
+chown loxberry:loxberry "$LBHOMEDIR/config/system/themes" "$LBHOMEDIR/data/system/themes"
+chmod 755 "$LBHOMEDIR/config/system/themes" "$LBHOMEDIR/data/system/themes"
+find "$LBHOMEDIR/config/system/themes" -maxdepth 1 -type f -exec chown loxberry:loxberry {} \; -exec chmod 600 {} \;
+chown -R loxberry:loxberry "$LBHOMEDIR/data/system/themes"
+find "$LBHOMEDIR/data/system/themes" -type d -exec chmod 755 {} \;
+find "$LBHOMEDIR/data/system/themes" -type f -exec chmod 644 {} \;
 
 chmod -Rc 755 $LBHOMEDIR/libs
 chmod -Rc 755 $LBHOMEDIR/sbin

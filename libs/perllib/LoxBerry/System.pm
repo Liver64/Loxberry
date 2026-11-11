@@ -9,7 +9,7 @@ use Carp;
 use Encode;
 
 package LoxBerry::System;
-our $VERSION = "4.0.0.14";
+our $VERSION = "4.0.0.15";
 our $DEBUG;
 
 use base 'Exporter';
@@ -567,11 +567,11 @@ sub read_generaljson
 	$lbtimezone		= $cfg->{Timeserver}->{Timezone};
 	$webserverport  = $cfg->{Webserver}->{Port};
 	$mqttcfg 	    = $cfg->{Mqtt};
-	$lbtheme        = $cfg->{Base}->{Theme} // 'soft-rounded';
-	# Map legacy theme names to new themes
-	my %_theme_map = ('classic' => 'classic-lb', 'modern' => 'soft-rounded', 'dark' => 'glass');
-	$lbtheme = $_theme_map{$lbtheme} if exists $_theme_map{$lbtheme};
-	$lbtheme = 'soft-rounded' unless $lbtheme =~ /^(soft-rounded|clean-admin|glass|classic-lb)$/;
+	# Theme IDs are validated dynamically against the core theme registry.
+	# No hard-coded theme whitelist or legacy alias mapping is kept here.
+	my $configured_theme = $cfg->{Base}->{Theme} // 'classic-lb';
+	require LoxBerry::Theme;
+	$lbtheme = LoxBerry::Theme::normalize_theme($configured_theme);
 
 	if ( ! defined $cfg->{Miniserver} or keys(%{$cfg->{Miniserver}}) < 1) {
 		return undef;

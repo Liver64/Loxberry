@@ -1,3 +1,4 @@
+# Version: 4.0.1.20 - Preserve user theme registrations.
 # System file to define excluded files during LoxBerry Update
 
 .git
@@ -12,6 +13,7 @@
 /config/plugins
 /config/system/*.cfg
 /config/system/*.json
+/config/system/themes/*.json
 /config/system/*.dat
 /config/system/*.
 /config/system/update-exclude.userdefined

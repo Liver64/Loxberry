@@ -1,0 +1,569 @@
+<!-- LoxBerry CSS Studio - Version: 4.0.1.18 -->
+<link rel="stylesheet" href="/system/themes/css/design-studio.css?v=<TMPL_VAR VERSION>">
+<script>window.LBLANG = "<TMPL_VAR LBLANG ESCAPE=JS>"; window.CFW_LANGUAGE = window.LBLANG; window.LBDesignStudioLangs = <TMPL_VAR LANGUAGE_JSON ESCAPE=NONE>;</script>
+
+<div class="cfw-page cfw-design-studio">
+  <div id="liquidGlassStudioWallpaper" class="cfw-liquid-studio-wallpaper" hidden aria-hidden="true"></div>
+  <div class="cfw-top-status-slot" aria-hidden="false">
+    <div id="studioTopMessage" class="cfw-top-message" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+  </div>
+  <div class="cfw-toolbar">
+    <div class="cfw-toolbar-title">
+      <div class="cfw-title-line">
+        <h1 data-i18n="STUDIO_TITLE"></h1>
+      </div>
+      <p data-i18n="STUDIO_SUBTITLE"></p>
+    </div>
+    <div class="cfw-toolbar-actions cfw-theme-actions">
+      <label class="cfw-theme-select-label"><span data-i18n="REGISTRY_THEME"></span>
+        <select id="userThemeSelect" class="cfw-theme-select" data-role="none">
+          <option value="" data-i18n="TOOLBAR_CURRENT_PREVIEW_NEW_THEME"></option>
+        </select>
+      </label>
+      <button type="button" id="undoTheme" class="cfw-button" data-role="none" disabled title="" data-i18n="MAIN_BUTTONS_UNDO" data-i18n-attr="title:UNDO_AVAILABLE_TITLE">↶ Rückgängig</button>
+      <button type="button" id="validateTheme" class="cfw-button" data-role="none" data-i18n="MAIN_BUTTONS_VALIDATE"></button>
+      <button type="button" id="saveTheme" class="cfw-button cfw-button-primary" data-role="none" data-i18n="MAIN_BUTTONS_SAVE"></button>
+      <button type="button" id="duplicateTheme" class="cfw-button" data-role="none" data-i18n="STUDIO_ENHANCEMENTS_DUPLICATE"></button>
+      <button type="button" id="deleteTheme" class="cfw-button" data-role="none" data-i18n="MAIN_BUTTONS_DELETE"></button>
+    </div>
+  </div>
+
+  <nav class="cfw-tabs" aria-label="" data-i18n-attr="aria-label:TABS_ARIA_LABEL">
+    <button type="button" class="cfw-tab is-active" data-cfw-tab="workbench" data-role="none" data-i18n="TABS_DESIGN_STUDIO"></button>
+    <button type="button" class="cfw-tab" data-cfw-tab="preview" data-role="none" data-i18n="TABS_PREVIEW"></button>
+    <button type="button" class="cfw-tab" data-cfw-tab="wiki" data-role="none" data-i18n="TABS_WIKI"></button>
+  </nav>
+
+  <section id="cfwTabWorkbench" class="cfw-tab-panel is-active">
+  <div class="cfw-workbench">
+    <aside class="cfw-left">
+      <div class="cfw-left-primary-stack">
+        <section id="newThemeColorPanel" class="cfw-panel cfw-new-theme-color-panel">
+          <button type="button" id="newThemeColorToggle" class="cfw-button cfw-button-primary cfw-new-theme-color-toggle" data-role="none" data-i18n="GLOBAL_COLOR_NEW_THEME"></button>
+          <div id="newThemeColorControls" class="cfw-new-theme-color-controls" hidden>
+            <h2 data-i18n="GLOBAL_COLOR_TITLE"></h2>
+            <p class="cfw-hint" data-i18n="GLOBAL_COLOR_HINT"></p>
+            <div id="newThemeColorPalette" class="cfw-color-preset-palette" aria-label="" data-i18n-attr="aria-label:GLOBAL_COLOR_PALETTE_ARIA"></div>
+            <label class="cfw-label cfw-global-color-picker"><span data-i18n="GLOBAL_COLOR_COLOR"></span>
+              <input id="newThemeColorPicker" class="cfw-native-color-input" type="color" value="#2563eb" data-role="none">
+            </label>
+            <div class="cfw-global-color-mode">
+              <select id="newThemeColorMode" data-role="none" aria-label="" data-i18n-attr="aria-label:GLOBAL_COLOR_MODE">
+                <option value="auto" data-i18n="GLOBAL_COLOR_MODE_AUTO"></option>
+                <option value="light" data-i18n="GLOBAL_COLOR_MODE_LIGHT"></option>
+                <option value="dark" data-i18n="GLOBAL_COLOR_MODE_DARK"></option>
+              </select>
+            </div>
+            <section id="newThemeColorAnalysis" class="cfw-new-theme-color-analysis" aria-live="polite" hidden aria-hidden="true">
+              <div><span data-i18n="GLOBAL_COLOR_BRIGHTNESS"></span><strong id="newThemeBrightnessValue">–</strong></div>
+              <div><span data-i18n="GLOBAL_COLOR_RESOLVED_MODE"></span><strong id="newThemeResolvedModeValue">–</strong></div>
+              <div><span data-i18n="GLOBAL_COLOR_ON_PRIMARY"></span><strong id="newThemeOnPrimaryValue">–</strong></div>
+              <div><span data-i18n="GLOBAL_COLOR_CONTRAST"></span><strong id="newThemeContrastValue">–</strong></div>
+            </section>
+            <div class="cfw-new-theme-color-actions">
+              <button type="button" id="applyNewThemeColor" class="cfw-button cfw-button-primary" data-role="none" data-i18n="GLOBAL_COLOR_APPLY"></button>
+              <button type="button" id="cancelNewThemeColor" class="cfw-button" data-role="none" data-i18n="MAIN_BUTTONS_CANCEL"></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="cfw-panel cfw-step-panel cfw-selection-inspector" style="display:none">
+          <h2 data-i18n="INSPECTOR_SELECTED_ELEMENT" data-i18n-attr="data-preview-hint:INSPECTOR_CLICK_HINT"></h2>
+          <div class="cfw-component-disclosure">
+          <div class="cfw-selected-component-card cfw-disclosure-summary cfw-selection-heading">
+            <div class="cfw-selected-eyebrow" data-i18n="INSPECTOR_SELECTED_EYEBROW"></div>
+            <div id="selectedElementTitle" class="cfw-selected-title" data-i18n="COMPONENTS_INPUT_TEXT"></div>
+            <div id="selectedElementMeta" class="cfw-selected-meta" data-i18n="INSPECTOR_EMPTY_META"></div>
+          </div>
+          <div id="propertyInspector" class="cfw-property-list" data-i18n-attr="aria-label:PROPERTIES_ARIA_LABEL"></div>
+          </div>
+
+
+          <div class="cfw-legacy-selects" aria-hidden="true">
+            <label class="cfw-label"><span data-i18n="PROPERTIES_AREA"></span>
+              <select id="areaSelect" data-role="none" tabindex="-1"></select>
+            </label>
+            <label class="cfw-label"><span data-i18n="PROPERTIES_ELEMENT_VARIANT"></span>
+              <select id="elementSelect" data-role="none" tabindex="-1"></select>
+            </label>
+            <label class="cfw-label"><span data-i18n="PROPERTIES_PROPERTY"></span>
+              <select id="colorGroupSelect" data-role="none" tabindex="-1"></select>
+            </label>
+          </div>
+        </section>
+
+        <section class="cfw-panel cfw-slider-panel">
+          <h2 data-i18n="SETTINGS_TITLE"></h2>
+          <div class="cfw-control-grid cfw-control-grid-simple">
+            <div class="cfw-label cfw-color-setting"><span data-i18n="SETTINGS_COLOR"></span>
+              <div id="colorPresetPalette" class="cfw-color-preset-palette" aria-label="" data-i18n-attr="aria-label:PALETTE_ARIA_LABEL"></div>
+              <input id="colorPicker" class="cfw-native-color-input" type="color" value="#007aff" data-role="none" aria-label="" data-i18n-attr="aria-label:PALETTE_CUSTOM_COLOR_ARIA">
+            </div>
+            <label class="cfw-label"><span data-i18n="SETTINGS_RADIUS"></span>
+              <input id="radiusRange" type="range" min="0" max="36" value="12" data-role="none">
+              <span id="radiusValue" class="cfw-small-value">12px</span>
+            </label>
+            <label class="cfw-label cfw-border-width-setting" hidden><span data-i18n="SETTINGS_BORDER_WIDTH"></span>
+              <input id="borderWidthRange" type="range" min="0" max="8" value="1" data-role="none">
+              <span id="borderWidthValue" class="cfw-small-value">1px</span>
+            </label>
+
+
+            <input id="alphaRange" type="hidden" value="100" data-role="none">
+            <input id="brightnessRange" type="hidden" value="0" data-role="none">
+            <input id="shadowRange" type="hidden" value="1" data-role="none">
+            <span id="alphaValue" hidden>100%</span>
+            <span id="brightnessValue" hidden>0</span>
+            <span id="shadowValue" hidden>1</span>
+          </div>
+        </section>
+
+        <section id="wallpaperControls" class="cfw-panel cfw-wallpaper-panel" hidden>
+          <h2 data-i18n="WALLPAPER_TITLE"></h2>
+          <div class="cfw-control-grid cfw-wallpaper-grid">
+            <label class="cfw-label cfw-check"><input id="wallpaperEnabled" type="checkbox" data-role="none"> <span data-i18n="WALLPAPER_ENABLED"></span></label>
+            <div id="wallpaperAdvancedControls" class="cfw-wallpaper-advanced" aria-hidden="true">
+              <label class="cfw-label"><span data-i18n="WALLPAPER_IMAGE"></span>
+                <input id="wallpaperImage" type="text" placeholder="https://example.com/wallpaper.jpg" data-role="none" data-i18n-attr="placeholder:WALLPAPER_IMAGE_PLACEHOLDER">
+              </label>
+              <label class="cfw-label"><span data-i18n="WALLPAPER_FILE"></span>
+                <input id="wallpaperFile" class="cfw-file-native" type="file" accept="image/*" data-role="none">
+                <span class="cfw-file-picker">
+                  <button id="wallpaperFileButton" class="lb-btn cfw-file-button" type="button" data-i18n="WALLPAPER_CHOOSE_FILE"></button>
+                  <span id="wallpaperFileName" class="cfw-file-name" data-i18n="WALLPAPER_NO_FILE"></span>
+                </span>
+              </label>
+              <label class="cfw-label"><span data-i18n="WALLPAPER_BRIGHTNESS"></span>
+                <input id="wallpaperBrightness" type="range" min="0" max="150" value="100" data-role="none">
+                <span id="wallpaperBrightnessValue" class="cfw-small-value">100%</span>
+              </label>
+              <label class="cfw-label"><span data-i18n="WALLPAPER_OPACITY"></span>
+                <input id="wallpaperOpacity" type="range" min="0" max="100" value="100" data-role="none">
+                <span id="wallpaperOpacityValue" class="cfw-small-value">100%</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="cfw-panel cfw-import-panel" hidden>
+          <h2 data-i18n="IMPORT_TITLE"></h2>
+          <input id="cssImport" class="cfw-file-native" type="file" accept=".css,text/css" data-role="none">
+          <span class="cfw-file-picker">
+            <button id="cssImportButton" class="lb-btn cfw-file-button" type="button" data-i18n="WALLPAPER_CHOOSE_FILE"></button>
+            <span id="cssImportFileName" class="cfw-file-name" data-i18n="WALLPAPER_NO_FILE"></span>
+          </span>
+          <p class="cfw-hint" data-i18n="IMPORT_HINT"></p>
+          <div id="importSummary" class="cfw-status cfw-import-summary" hidden></div>
+          <details class="cfw-advanced">
+            <summary data-i18n="IMPORT_SHOW_CUSTOM_CSS"></summary>
+            <textarea id="customCss" rows="8" spellcheck="false" data-role="none" data-i18n="CUSTOM_CSS_DEFAULT_TEXT"></textarea>
+          </details>
+        </section>
+      </div>
+
+      <div class="cfw-left-secondary-stack">
+        <section class="cfw-panel cfw-palette-panel">
+          <h2 data-i18n="PALETTE_TITLE"></h2>
+          <div id="paletteGrid" class="cfw-palette-grid"></div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="cfw-right cfw-panel">
+      <div class="cfw-preview-head">
+        <div>
+          <h2 data-i18n="PREVIEW_TITLE"></h2>
+          <p id="previewWorkHint" class="cfw-preview-work-hint" data-i18n="PREVIEW_WORK_HINT"></p>
+          <p class="cfw-preview-breadcrumb"><strong id="previewCaption" data-i18n="PREVIEW_CAPTION"></strong></p>
+        </div>
+        <div class="cfw-token-pill"><strong id="mappedTokenCount">0</strong> <span data-i18n="PREVIEW_INTERNAL_TOKENS"></span></div>
+      </div>
+
+      <div id="previewRoot" class="cfw-preview theme-user-demo" data-cfw-area="Background" data-cfw-element="System Hintergrund" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_BACKGROUND">
+        <div id="liquidGlassWallpaperPreview" class="cfw-liquid-wallpaper-preview" aria-hidden="true"></div>
+
+        <button id="previewWallpaperShortcut" class="cfw-preview-wallpaper-shortcut" type="button" data-role="none" data-i18n-attr="aria-label:WALLPAPER_SHORTCUT_ARIA;title:WALLPAPER_SHORTCUT_TITLE">
+          <span class="cfw-preview-wallpaper-shortcut-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M4 5.5h16v13H4zM7 15l3.2-3.5 2.6 2.7 2.2-2.2 2 3M8.2 9.2h.01"/></svg>
+          </span>
+          <span data-i18n="WALLPAPER_SHORTCUT_LABEL"></span>
+        </button>
+
+        <div class="cfw-preview-wallpaper-watermark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M4 5.5h16v13H4zM7 15l3.2-3.5 2.6 2.7 2.2-2.2 2 3M8.2 9.2h.01"/></svg>
+        </div>
+        <div class="cfw-app-preview">
+          <aside class="cfw-app-sidebar" data-cfw-area="Layout" data-cfw-element="Sidebar" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_SIDEBAR">
+            <div class="cfw-logo-dot"></div>
+            <div class="cfw-nav-item active" data-cfw-area="Layout" data-cfw-element="Sidebar Einträge" data-cfw-group="Buttonfarbe" data-i18n-attr="title:PREVIEW_EDIT_SIDEBAR" data-i18n="PREVIEW_NAV_DASHBOARD"></div>
+            <div class="cfw-nav-item" data-cfw-area="Layout" data-cfw-element="Sidebar Einträge" data-cfw-group="Textfarbe" data-i18n-attr="title:PREVIEW_EDIT_SIDEBAR" data-i18n="PREVIEW_NAV_SETTINGS"></div>
+            <div class="cfw-nav-item" data-cfw-area="Layout" data-cfw-element="Sidebar Einträge" data-cfw-group="Textfarbe" data-i18n-attr="title:PREVIEW_EDIT_SIDEBAR" data-i18n="PREVIEW_NAV_LOGFILES"></div>
+          </aside>
+          <main class="cfw-app-main" data-cfw-area="Background" data-cfw-element="System Hintergrund" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_BACKGROUND">
+            <header class="cfw-app-header">
+              <strong>LoxBerry</strong>
+              <div class="cfw-header-actions" data-cfw-area="Buttons" data-cfw-element="Header Buttons" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_HEADER_BUTTONS"><button class="lb-button cfw-mini-btn cfw-header-btn" data-role="none">⌂</button><button class="lb-button cfw-mini-btn cfw-header-btn" data-role="none">?</button><button class="lb-button cfw-mini-btn cfw-header-btn" data-role="none">×</button><button class="lb-button cfw-mini-btn cfw-header-btn" data-role="none">🔔</button></div>
+            </header>
+
+            <section class="lb-card cfw-hero-card">
+              <h3 data-i18n="PREVIEW_CARD_TITLE"></h3>
+              <p data-i18n="PREVIEW_CARD_TEXT"></p>
+              <div class="cfw-inline-controls">
+                <input class="lb-input" data-i18n-attr="value:PREVIEW_FORM_INPUT_TEXT;title:PREVIEW_EDIT_INPUT_TEXT" data-role="none" data-cfw-area="Input" data-cfw-element="Input Text" data-cfw-group="Grundfarbe" >
+                <select class="lb-input" data-role="none" data-cfw-area="Selects" data-cfw-element="Standard Select" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_SELECT"><option data-i18n="PREVIEW_FORM_SELECT"></option><option data-i18n="PREVIEW_FORM_OPTION"></option></select>
+                <button class="lb-button" data-role="none" data-cfw-area="Buttons" data-cfw-element="Standard Button" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_BUTTON" data-i18n="PREVIEW_FORM_BUTTON"></button>
+                <button class="lb-button lb-button-active" data-role="none" data-cfw-area="Buttons" data-cfw-element="Active Button" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_ACTIVE_BUTTON" data-i18n="PREVIEW_FORM_ACTIVE"></button>
+              <div class="lb-btn-group cfw-preview-btn-group" data-role="none" data-cfw-area="Buttons" data-cfw-element="Button Gruppe" data-cfw-group="Rahmen" data-i18n-attr="title:PREVIEW_EDIT_BUTTON_GROUP"><button type="button" class="is-active active lb-active" aria-pressed="true" data-role="none" data-cfw-area="Buttons" data-cfw-element="Button Gruppe" data-cfw-group="Active" data-i18n="MAIN_COMMON_YES"></button><button type="button" data-role="none" data-cfw-area="Buttons" data-cfw-element="Button Gruppe" data-cfw-group="Grundfarbe" data-i18n="MAIN_COMMON_NO"></button><button type="button" data-role="none" data-cfw-area="Buttons" data-cfw-element="Button Gruppe" data-cfw-group="Grundfarbe" data-i18n="MAIN_COMMON_AUTO"></button></div></div>
+            </section>
+
+            <section class="lb-card cfw-form-card">
+              <h3 data-i18n="PREVIEW_FORMS_TITLE"></h3>
+              <div class="cfw-form-grid">
+                <label data-cfw-area="Input" data-cfw-element="Input Text" data-cfw-group="Textfarbe" data-i18n-attr="title:PREVIEW_EDIT_INPUT"><span data-i18n="PREVIEW_FORMS_INPUT"></span> <input class="lb-input" data-i18n-attr="value:PREVIEW_FORMS_TEXT_VALUE" data-role="none"></label>
+                <label data-cfw-area="Dropdowns" data-cfw-element="Dropdown Menü" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_DROPDOWN"><span data-i18n="PREVIEW_FORMS_DROPDOWN"></span> <select class="lb-input" data-role="none"><option data-i18n="PREVIEW_FORMS_DROPDOWN"></option></select></label>
+                <label data-cfw-area="Input" data-cfw-element="Textarea" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_TEXTAREA"><span data-i18n="PREVIEW_FORMS_TEXTAREA"></span> <textarea class="lb-input" rows="2" data-role="none" data-i18n="PREVIEW_FORMS_TEXTAREA"></textarea></label>
+                <label data-cfw-area="Slider" data-cfw-element="Standard Slider" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_SLIDER"><span data-i18n="PREVIEW_FORMS_SLIDER"></span> <input class="cfw-range" type="range" value="60" data-role="none"></label>
+                <label class="cfw-check" data-cfw-area="Checkboxen" data-cfw-element="Standard Checkbox" data-cfw-group="Active" data-i18n-attr="title:PREVIEW_EDIT_CHECKBOX"><input type="checkbox" checked> <span data-i18n="PREVIEW_FORMS_CHECKBOX"></span></label>
+                <label class="cfw-check" data-cfw-area="Radio" data-cfw-element="Standard Radio" data-cfw-group="Active" data-i18n-attr="title:PREVIEW_EDIT_RADIO"><input type="radio" checked> <span data-i18n="PREVIEW_FORMS_RADIO"></span></label>
+                <label class="cfw-switch-row" data-cfw-area="Toggle" data-cfw-element="Standard Toggle" data-cfw-group="Active" data-i18n-attr="title:PREVIEW_EDIT_TOGGLE"><span data-i18n="PREVIEW_FORMS_TOGGLE"></span> <span class="cfw-toggle-demo-pair"><span class="cfw-switch" title="" data-i18n-attr="title:PREVIEW_TOGGLE_OFF_TITLE"><input type="checkbox"><span></span></span><span class="cfw-switch" title="" data-i18n-attr="title:PREVIEW_TOGGLE_ON_TITLE"><input type="checkbox" checked><span></span></span></span></label>
+              </div>
+            </section>
+            <table class="lb-table cfw-preview-table" data-cfw-area="tabellen" data-cfw-element="Standard Tabelle" data-cfw-group="Grundfarbe" data-i18n-attr="title:PREVIEW_EDIT_TABLE">
+              <thead data-cfw-area="tabellen" data-cfw-element="Standard Tabelle" data-cfw-group="Header" data-i18n-attr="title:PREVIEW_EDIT_TABLE"><tr><th data-i18n="PREVIEW_TABLE_NAME"></th><th data-i18n="PREVIEW_TABLE_TYPE"></th><th data-i18n="PREVIEW_TABLE_STATUS"></th><th data-i18n="PREVIEW_TABLE_ACTION"></th></tr></thead>
+              <tbody>
+                <tr><td data-i18n="PREVIEW_TABLE_LIVING_ROOM"></td><td data-i18n="PREVIEW_TABLE_STANDARD"></td><td><span class="cfw-badge" data-i18n="PREVIEW_TABLE_ONLINE"></span></td><td><select class="lb-input" data-role="none"><option data-i18n="PREVIEW_TABLE_SELECTION"></option></select></td></tr>
+                <tr><td data-i18n="PREVIEW_TABLE_KITCHEN"></td><td data-i18n="PREVIEW_TABLE_COMPACT"></td><td data-i18n="PREVIEW_TABLE_STANDBY"></td><td><button class="lb-button" data-role="none" data-i18n="MAIN_BUTTONS_TEST"></button></td></tr>
+                <tr class="cfw-table-hover-demo" data-cfw-area="tabellen" data-cfw-element="Standard Tabelle" data-cfw-group="Hover" data-i18n-attr="title:PREVIEW_EDIT_TABLE"><td data-i18n="PREVIEW_TABLE_BATH"></td><td data-i18n="PREVIEW_TABLE_HOVER"></td><td data-i18n="PREVIEW_TABLE_OFFLINE"></td><td><input class="lb-input" data-i18n-attr="value:PREVIEW_TABLE_VALUE" data-role="none"></td></tr>
+              </tbody>
+            </table>
+          </main>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <section id="studioStatusBar" class="cfw-panel cfw-main-status cfw-status-window" role="status" aria-live="polite" style="display:block;position:relative;float:none;clear:both;width:50vw;max-width:50vw;min-width:0;margin:2cm auto 0 auto;box-sizing:border-box;">
+    <div class="cfw-status-table">
+      <div class="cfw-status-label" data-i18n="MAIN_STATUS_TITLE"></div>
+      <div id="status" class="cfw-status" aria-live="polite"></div>
+    </div>
+  </section>
+  </section>
+
+  <section id="cfwTabPreview" class="cfw-tab-panel cfw-embedded-panel" hidden>
+    <iframe id="cfwPreviewFrame" class="cfw-embedded-frame" src="/admin/system/themes/preview.cgi?page=preview" title="" data-i18n-attr="title:TABS_PREVIEW"></iframe>
+  </section>
+
+  <section id="cfwTabWiki" class="cfw-tab-panel cfw-wiki-panel" hidden>
+    <div class="cfw-wiki-hero cfw-panel">
+      <div class="cfw-wiki-hero-copy">
+        <span class="cfw-wiki-eyebrow" data-i18n="WIKI_EYEBROW"></span>
+        <h2 data-i18n="WIKI_TITLE"></h2>
+        <p data-i18n="WIKI_INTRO"></p>
+      </div>
+      <div class="cfw-wiki-hero-symbol" aria-hidden="true">
+        <svg viewBox="0 0 64 64" focusable="false">
+          <path d="M13 11h31a7 7 0 0 1 7 7v35H20a7 7 0 0 1-7-7z"/>
+          <path d="M20 53a7 7 0 0 1 0-14h31M22 21h18M22 29h14"/>
+        </svg>
+      </div>
+    </div>
+
+    <nav class="cfw-wiki-nav cfw-panel" aria-label="" data-i18n-attr="aria-label:WIKI_NAVIGATION_ARIA">
+      <a href="#wiki-new-theme" data-i18n="WIKI_NAV_NEW_THEME"></a>
+      <a href="#wiki-edit" data-i18n="WIKI_NAV_EDIT"></a>
+      <a href="#wiki-wallpaper" data-i18n="WIKI_NAV_WALLPAPER"></a>
+      <a href="#wiki-save" data-i18n="WIKI_NAV_SAVE"></a>
+      <a href="#wiki-custom-css" data-i18n="WIKI_NAV_CUSTOM_CSS"></a>
+      <a href="#wiki-faq" data-i18n="WIKI_NAV_FAQ"></a>
+    </nav>
+
+    <div class="cfw-wiki-grid">
+      <article id="wiki-new-theme" class="cfw-wiki-card cfw-panel">
+        <div class="cfw-wiki-card-number">1</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_NEW_THEME_TITLE"></h3>
+          <p data-i18n="WIKI_NEW_THEME_INTRO"></p>
+          <ol class="cfw-wiki-steps">
+            <li data-i18n-html="WIKI_NEW_THEME_STEP1"></li>
+            <li data-i18n-html="WIKI_NEW_THEME_STEP2"></li>
+            <li data-i18n-html="WIKI_NEW_THEME_STEP3"></li>
+            <li data-i18n-html="WIKI_NEW_THEME_STEP4"></li>
+            <li data-i18n-html="WIKI_NEW_THEME_STEP5"></li>
+          </ol>
+          <div class="cfw-wiki-tip"><strong data-i18n="WIKI_TIP_LABEL"></strong> <span data-i18n="WIKI_NEW_THEME_TIP"></span></div>
+        </div>
+      </article>
+
+      <article id="wiki-edit" class="cfw-wiki-card cfw-panel">
+        <div class="cfw-wiki-card-number">2</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_EDIT_TITLE"></h3>
+          <p data-i18n="WIKI_EDIT_INTRO"></p>
+          <ol class="cfw-wiki-steps">
+            <li data-i18n-html="WIKI_EDIT_STEP1"></li>
+            <li data-i18n-html="WIKI_EDIT_STEP2"></li>
+            <li data-i18n-html="WIKI_EDIT_STEP3"></li>
+            <li data-i18n-html="WIKI_EDIT_STEP4"></li>
+          </ol>
+          <div class="cfw-wiki-property-list">
+            <span data-i18n="WIKI_EDIT_COLOR"></span>
+            <span data-i18n="WIKI_EDIT_TEXT"></span>
+            <span data-i18n="WIKI_EDIT_BORDER"></span>
+            <span data-i18n="WIKI_EDIT_HOVER"></span>
+            <span data-i18n="WIKI_EDIT_RADIUS"></span>
+          </div>
+          <div class="cfw-wiki-note" data-i18n="WIKI_EDIT_ADVANCED"></div>
+        </div>
+      </article>
+
+      <article class="cfw-wiki-card cfw-panel">
+        <div class="cfw-wiki-card-number">3</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_VALUES_TITLE"></h3>
+          <ul class="cfw-wiki-checklist">
+            <li data-i18n="WIKI_VALUES_COLOR"></li>
+            <li data-i18n="WIKI_VALUES_RADIUS"></li>
+            <li data-i18n="WIKI_VALUES_BORDER"></li>
+            <li data-i18n="WIKI_VALUES_UNDO"></li>
+          </ul>
+        </div>
+      </article>
+
+      <article id="wiki-wallpaper" class="cfw-wiki-card cfw-panel">
+        <div class="cfw-wiki-card-number">4</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_WALLPAPER_TITLE"></h3>
+          <ol class="cfw-wiki-steps">
+            <li data-i18n-html="WIKI_WALLPAPER_STEP1"></li>
+            <li data-i18n-html="WIKI_WALLPAPER_STEP2"></li>
+            <li data-i18n-html="WIKI_WALLPAPER_STEP3"></li>
+            <li data-i18n-html="WIKI_WALLPAPER_STEP4"></li>
+          </ol>
+        </div>
+      </article>
+
+      <article id="wiki-save" class="cfw-wiki-card cfw-panel">
+        <div class="cfw-wiki-card-number">5</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_SAVE_TITLE"></h3>
+          <p data-i18n="WIKI_SAVE_TEXT"></p>
+          <ul class="cfw-wiki-checklist">
+            <li data-i18n="WIKI_SAVE_NAME"></li>
+            <li data-i18n="WIKI_SAVE_GENERATE"></li>
+            <li data-i18n="WIKI_SAVE_RELOAD"></li>
+            <li data-i18n="WIKI_SAVE_DELETE"></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="cfw-wiki-card cfw-panel">
+        <div class="cfw-wiki-card-number">6</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_PREVIEW_TITLE"></h3>
+          <p data-i18n="WIKI_PREVIEW_TEXT"></p>
+          <div class="cfw-wiki-tip"><strong data-i18n="WIKI_TIP_LABEL"></strong> <span data-i18n="WIKI_PREVIEW_TIP"></span></div>
+        </div>
+      </article>
+
+      <section id="wiki-special-themes" class="cfw-wiki-special cfw-wiki-card-wide">
+        <article class="cfw-wiki-special-card cfw-panel">
+          <div class="cfw-wiki-special-icon" aria-hidden="true">◌</div>
+          <h3 data-i18n="WIKI_LIQUID_GLASS_TITLE"></h3>
+          <p data-i18n="WIKI_LIQUID_GLASS_TEXT"></p>
+          <p class="cfw-wiki-special-hint" data-i18n="WIKI_LIQUID_GLASS_HINT"></p>
+        </article>
+        <article class="cfw-wiki-special-card cfw-panel">
+          <div class="cfw-wiki-special-icon cfw-wiki-special-icon-mac" aria-hidden="true">⌘</div>
+          <h3 data-i18n="WIKI_CLASSIC_MAC_TITLE"></h3>
+          <p data-i18n="WIKI_CLASSIC_MAC_TEXT"></p>
+          <p class="cfw-wiki-special-hint" data-i18n="WIKI_CLASSIC_MAC_HINT"></p>
+        </article>
+      </section>
+
+      <article id="wiki-custom-css" class="cfw-wiki-card cfw-wiki-card-wide cfw-wiki-contract cfw-wiki-contract-collapsible">
+        <details class="cfw-wiki-contract-details">
+          <summary class="cfw-wiki-contract-summary">
+            <span class="cfw-wiki-card-number">CSS</span>
+            <span data-i18n="WIKI_CUSTOM_CSS_TITLE"></span>
+          </summary>
+          <div class="cfw-wiki-card-content cfw-wiki-contract-content">
+            <p data-i18n="WIKI_CUSTOM_CSS_INTRO"></p>
+
+          <div class="cfw-wiki-contract-grid">
+            <section>
+              <h4 data-i18n="WIKI_CUSTOM_CSS_NAMING_TITLE"></h4>
+              <ul class="cfw-wiki-checklist">
+                <li data-i18n-html="WIKI_CUSTOM_CSS_NAMING_FILE"></li>
+                <li data-i18n-html="WIKI_CUSTOM_CSS_NAMING_ID"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_NAMING_CHARS"></li>
+              </ul>
+            </section>
+            <section>
+              <h4 data-i18n="WIKI_CUSTOM_CSS_HEADER_TITLE"></h4>
+              <ul class="cfw-wiki-checklist">
+                <li data-i18n="WIKI_CUSTOM_CSS_HEADER_INFO"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_HEADER_MARKER"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_HEADER_ENCODING"></li>
+              </ul>
+            </section>
+            <section>
+              <h4 data-i18n="WIKI_CUSTOM_CSS_STRUCTURE_TITLE"></h4>
+              <ul class="cfw-wiki-checklist">
+                <li data-i18n-html="WIKI_CUSTOM_CSS_STRUCTURE_SCOPE"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_STRUCTURE_TOKENS"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_STRUCTURE_GLOBAL"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_STRUCTURE_CONTRAST"></li>
+              </ul>
+            </section>
+            <section>
+              <h4 data-i18n="WIKI_CUSTOM_CSS_INSTALL_TITLE"></h4>
+              <ul class="cfw-wiki-checklist">
+                <li data-i18n-html="WIKI_CUSTOM_CSS_INSTALL_PATH"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_INSTALL_REFRESH"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_INSTALL_SELECT"></li>
+                <li data-i18n="WIKI_CUSTOM_CSS_INSTALL_JSON"></li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="cfw-wiki-code-example">
+            <div class="cfw-wiki-code-title" data-i18n="WIKI_CUSTOM_CSS_EXAMPLE_TITLE"></div>
+            <pre><code>/*
+ * LoxBerry CSS Framework User Theme
+ * Theme: My Theme
+ * Theme ID: user-example
+ * Version: 1.0.0
+ * Author: Your Name
+ */
+body.theme-user-example,
+.theme-user-example {
+  --lb-bg: #101d2b;
+  --lb-text: #f8fafc;
+  --lb-primary: #166534;
+  --lb-primary-hover: #377b50;
+  --lb-border-color: #78a689;
+  --lb-card-bg: #122129;
+  --lb-btn-bg: #263b42;
+  --lb-btn-text: #f8fafc;
+  --lb-input-bg: #122129;
+  --lb-input-text: #f8fafc;
+  --lb-sidebar-bg: #05131b;
+  --lb-sidebar-text: #ffffff;
+}</code></pre>
+          </div>
+
+            <div class="cfw-wiki-tip"><strong data-i18n="WIKI_CUSTOM_CSS_CHECK_LABEL"></strong> <span data-i18n="WIKI_CUSTOM_CSS_CHECK_TEXT"></span></div>
+          </div>
+        </details>
+      </article>
+
+      <article id="wiki-faq" class="cfw-wiki-card cfw-panel cfw-wiki-card-wide">
+        <div class="cfw-wiki-card-number">?</div>
+        <div class="cfw-wiki-card-content">
+          <h3 data-i18n="WIKI_FAQ_TITLE"></h3>
+          <details>
+            <summary data-i18n="WIKI_FAQ_MULTIPLE_QUESTION"></summary>
+            <p data-i18n="WIKI_FAQ_MULTIPLE_ANSWER"></p>
+          </details>
+          <details>
+            <summary data-i18n="WIKI_FAQ_UNDO_QUESTION"></summary>
+            <p data-i18n="WIKI_FAQ_UNDO_ANSWER"></p>
+          </details>
+          <details>
+            <summary data-i18n="WIKI_FAQ_PROTECTED_QUESTION"></summary>
+            <p data-i18n="WIKI_FAQ_PROTECTED_ANSWER"></p>
+          </details>
+          <details>
+            <summary data-i18n="WIKI_FAQ_WALLPAPER_QUESTION"></summary>
+            <p data-i18n="WIKI_FAQ_WALLPAPER_ANSWER"></p>
+          </details>
+          <details>
+            <summary data-i18n="WIKI_FAQ_ACTIVATE_THEME_QUESTION"></summary>
+            <p data-i18n="WIKI_FAQ_ACTIVATE_THEME_ANSWER"></p>
+            <p class="cfw-wiki-special-hint" data-i18n="WIKI_FAQ_ACTIVATE_THEME_HINT"></p>
+          </details>
+        </div>
+      </article>
+    </div>
+  </section>
+
+
+</div>
+
+<div id="saveModal" class="cfw-modal" hidden>
+  <div class="cfw-modal-card">
+    <h2 data-i18n="SAVE_MODAL_TITLE"></h2>
+    <p class="cfw-help" data-i18n="SAVE_MODAL_HELP"></p>
+    <label class="cfw-label"><span data-i18n="SAVE_MODAL_DISPLAY_NAME"></span>
+      <input id="themeName" data-i18n-attr="value:SAVE_MODAL_DEFAULT_THEME_NAME" data-role="none">
+    </label>
+    <input id="themeId" type="hidden" value="">
+    <label class="cfw-label"><span data-i18n="SAVE_MODAL_VERSION"></span>
+      <input id="themeVersion" value="0.1.0" data-role="none" readonly>
+    </label>
+
+    <input id="baseTheme" type="hidden" value="core">
+    <div class="cfw-modal-actions">
+      <button type="button" id="cancelSave" class="cfw-button" data-role="none" data-i18n="MAIN_BUTTONS_CANCEL"></button>
+      <button type="button" id="confirmSave" class="cfw-button cfw-button-primary" data-role="none" data-i18n="MAIN_BUTTONS_SAVE_GENERATE_CSS"></button>
+    </div>
+  </div>
+</div>
+
+
+<div id="validationModal" class="cfw-modal cfw-validation-modal" hidden role="dialog" aria-modal="true" aria-labelledby="validationModalTitle">
+  <div class="cfw-modal-card cfw-validation-modal-card">
+    <h2 id="validationModalTitle" data-i18n="VALIDATOR_TITLE"></h2>
+    <p id="validationSummary" class="cfw-help"></p>
+    <div id="validationIssueList" class="cfw-validation-list"></div>
+    <p class="cfw-help cfw-validation-note" data-i18n="VALIDATOR_AUTO_FIX_NOTE"></p>
+    <div class="cfw-modal-actions cfw-validation-actions">
+      <button type="button" id="validationCancel" class="cfw-button" data-role="none" data-i18n="MAIN_BUTTONS_CANCEL"></button>
+      <button type="button" id="validationSaveAnyway" class="cfw-button" data-role="none" data-i18n="VALIDATOR_SAVE_ANYWAY"></button>
+      <button type="button" id="validationAutoFix" class="cfw-button cfw-button-primary" data-role="none" data-i18n="VALIDATOR_AUTO_FIX_SELECTED"></button>
+    </div>
+  </div>
+</div>
+
+<div id="deleteModal" class="cfw-modal" hidden>
+  <div class="cfw-modal-card">
+    <h2 data-i18n="DELETE_MODAL_TITLE"></h2>
+    <p class="cfw-help" data-i18n="DELETE_MODAL_HELP"></p>
+    <div class="cfw-modal-actions">
+      <button type="button" id="cancelDelete" class="cfw-button" data-role="none" data-i18n="MAIN_BUTTONS_CANCEL"></button>
+      <button type="button" id="confirmDelete" class="cfw-button cfw-button-primary" data-role="none" data-i18n="MAIN_BUTTONS_DELETE"></button>
+    </div>
+  </div>
+</div>
+
+
+<div id="statusModal" class="cfw-modal cfw-status-modal" hidden role="dialog" aria-modal="true" aria-labelledby="statusModalTitle">
+  <div class="cfw-modal-card cfw-status-modal-card">
+    <div class="cfw-status-modal-header">
+      <span id="statusModalIcon" class="cfw-status-modal-icon" aria-hidden="true">i</span>
+      <h2 id="statusModalTitle" data-i18n="STATUS_MODAL_INFO_TITLE"></h2>
+    </div>
+    <p id="statusModalMessage" class="cfw-help"></p>
+    <p id="statusModalHint" class="cfw-help cfw-status-modal-hint"></p>
+    <div id="statusModalActions" class="cfw-modal-actions">
+      <button type="button" id="statusModalBack" class="cfw-button cfw-button-primary" data-role="none" data-i18n="MAIN_BUTTONS_BACK"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.CFW_DEFAULT_THEME = <TMPL_VAR DEFAULT_THEME_JSON ESCAPE=NONE>;
+window.CFW_CORE_DATA = <TMPL_VAR CORE_DATA_JSON ESCAPE=NONE>;
+window.CFW_CORE_TOKENS = <TMPL_VAR CORE_TOKENS_JSON ESCAPE=NONE>;
+window.CFW_USER_THEMES = <TMPL_VAR USER_THEMES_JSON ESCAPE=NONE>;
+</script>
+<script src="/system/themes/js/cfw-theme-state.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio/color-utils.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio/theme-identity.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio/protected-themes.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio/wallpaper-range.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio/color-directions.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio.js?v=<TMPL_VAR VERSION>"></script>
+<script src="/system/themes/js/design-studio/sticky-edit-panels.js?v=<TMPL_VAR VERSION>"></script>

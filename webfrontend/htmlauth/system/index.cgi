@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# Version: 3.0.0.4 - Rename the system widget to Design-Studio
 
 # Copyright 2016-2017 Michael Schlenstedt, michael@loxberry.de
 #
@@ -48,7 +49,7 @@ if (-z "$lbsconfigdir/general.cfg" || -z "$lbsconfigdir/general.json" || -z "$lb
 }
 
 # Version of this script
-my $version = "3.0.0.0";
+my $version = "3.0.0.2";
 
 my $sversion = LoxBerry::System::lbversion();
 
@@ -159,6 +160,12 @@ sub mainmenu {
 		# );
 		
 		my @widgets = (
+            {
+                WIDGET_TITLE => 'Design-Studio',
+                WIDGET_ICON => "/system/images/icons/main_css.svg",
+                WIDGET_CGI => "/admin/system/themes/studio.cgi",
+                NOTIFY_PACKAGE => "themes",
+            },
 			{
 				WIDGET_TITLE => $SL{'HEADER.PANEL_MYLOXBERRY'},
 				WIDGET_ICON => "/system/images/icons/main_myloxberry.svg",
@@ -351,5 +358,4 @@ sub INFO
 	my ($message) = @_;
 	print STDERR "index.cgi INFO: $message\n";
 }
-
 

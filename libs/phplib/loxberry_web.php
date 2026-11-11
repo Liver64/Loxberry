@@ -1,14 +1,78 @@
 <?php
+// Version: 3.0.0.5 - Resolve installed themes for shared headers.
 
 require_once "loxberry_system.php";
 
 class LBWeb
 {
-	public static $LBWEBVERSION = "3.0.0.3";
+	public static $LBWEBVERSION = "3.0.0.5";
 	
 	public static $lbpluginpage = "/admin/system/index.cgi";
 	public static $lbsystempage = "/admin/system/index.cgi?form=system";
 		
+	private static function assetUrl($url, $filepath)
+	{
+		if (!is_file($filepath)) {
+			return $url;
+		}
+		$hash = @hash_file('sha256', $filepath);
+		if (!$hash) {
+			return $url;
+		}
+		$version = substr($hash, 0, 12);
+		return $url . (strpos($url, '?') === false ? '?' : '&') . 'v=' . $version;
+	}
+
+	private static function themeInfo($id)
+	{
+		if (!is_string($id) || !preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/', $id)) {
+			return null;
+		}
+
+		// Reserved core IDs resolve directly to shipped CSS without JSON metadata.
+		$coreIds = array('classic-lb', 'clean-admin', 'glass', 'soft-rounded');
+		if (in_array($id, $coreIds, true)) {
+			$css = LBSHTMLDIR . "/css/themes/theme-$id.css";
+			return is_file($css) ? array('id' => $id, 'scope' => 'core', 'css' => $css,
+				'selectable' => true, 'url' => self::assetUrl("/system/css/themes/theme-$id.css", $css)) : null;
+		}
+		foreach (array('user') as $scope) {
+			$config = LBSCONFIGDIR . "/themes/$id.json";
+			$css = $scope === 'core' ? LBSHTMLDIR . "/css/themes/theme-$id.css" : LBSDATADIR . "/themes/theme-$id.css";
+			if (!is_file($config) || !is_file($css)) {
+				continue;
+			}
+
+			$raw = @file_get_contents($config);
+			$meta = $raw !== false ? json_decode($raw) : null;
+			if (!$meta || !isset($meta->id) || $meta->id !== $id) {
+				continue;
+			}
+			if (isset($meta->type) && $meta->type !== $scope) {
+				continue;
+			}
+
+			$selectable = !isset($meta->selectable) || (bool)$meta->selectable;
+			return array(
+				'id' => $id,
+				'scope' => $scope,
+				'css' => $css,
+				'selectable' => $selectable,
+				'url' => self::assetUrl($scope === 'core' ? "/system/css/themes/theme-$id.css" : "/admin/system/themes/theme-file.cgi/theme-$id.css", $css),
+			);
+		}
+		return null;
+	}
+
+	private static function normalizeTheme($id)
+	{
+		$theme = self::themeInfo($id);
+		if ($theme && $theme['selectable']) {
+			return $theme;
+		}
+		return self::themeInfo('classic-lb');
+	}
+
 	///////////////////////////////////////////////////////////////////
 	// prints the head
 	///////////////////////////////////////////////////////////////////
@@ -57,19 +121,16 @@ class LBWeb
 		$headobj->param('IS_CORE_PAGE', $is_plugin ? 0 : 1);
 		$headobj->param('LOAD_JQM',     ($is_plugin && !$nojqm) ? 1 : 0);
 
-		// Theme support — read Base.Theme from general.json (mirrors Web.pm logic)
+		// Theme support — dynamic core/user registry, no hard-coded whitelist.
 		LBSystem::read_generaljson();
 		global $cfg;
-		$theme = isset($cfg->Base->Theme) ? $cfg->Base->Theme : 'soft-rounded';
-		$_theme_map = array('classic' => 'classic-lb', 'modern' => 'soft-rounded', 'dark' => 'glass');
-		if (isset($_theme_map[$theme])) {
-			$theme = $_theme_map[$theme];
+		$configuredTheme = isset($cfg->Base->Theme) ? $cfg->Base->Theme : 'classic-lb';
+		$theme = self::normalizeTheme($configuredTheme);
+		if (!$theme) {
+			$theme = array('id' => 'classic-lb', 'url' => '');
 		}
-		if (!preg_match('/^(soft-rounded|clean-admin|glass|classic-lb)$/', $theme)) {
-			$theme = 'soft-rounded';
-		}
-		$headobj->param('THEME_CLASS', "theme-$theme");
-		$headobj->param('THEME_FILE', "theme-$theme.css");
+		$headobj->param('THEME_CLASS', 'theme-' . $theme['id']);
+		$headobj->param('THEME_URL', $theme['url']);
 
 		LBSystem::readlanguage($headobj, "language.ini", True);
 		return $headobj->outputString();

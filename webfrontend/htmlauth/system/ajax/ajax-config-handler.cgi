@@ -1,14 +1,16 @@
 #!/usr/bin/perl
+# Version: 3.0.0.2 - Add theme activation and notifications.
 use strict;
 use warnings;
 use CGI qw/:standard/;
 use Scalar::Util qw(looks_like_number);
 use LoxBerry::System;
+use LoxBerry::Theme qw(get_theme);
 
 # use LoxBerry::JSON;
 use JSON;
 			
-my $version = "3.0.0.0"; # Version of this script
+my $version = "3.0.0.2"; # Version of this script
 			
 ## ABOUT %response
 ## The END block sends the %response as json automatically
@@ -54,9 +56,38 @@ elsif ($action eq 'plugin-autoupdate') { plugindb_update('autoupdate', $R::plugi
 elsif ($action eq 'testenvironment') {  &testenvironment; }
 elsif ($action eq 'changelanguage') { change_generaljson("Base->Lang", $value);}
 elsif ($action eq 'changecountry') { change_generaljson("Base->Country", $value);}
+elsif ($action eq 'listthemes') {
+	# Activation uses registry selectability; Studio editing restrictions are separate.
+	$response{themes} = [ map { { id => $_->{id}, name => $_->{name} } }
+		grep { $_->{type} eq 'user' && $_->{selectable} } LoxBerry::Theme::list_themes() ];
+	$response{error} = 0;
+	$response{message} = 'OK';
+}
 elsif ($action eq 'changetheme') {
-	if ($value =~ /^(soft-rounded|clean-admin|glass|classic-lb)$/) {
-		change_generaljson("Base->Theme", $value);
+	my $theme = get_theme($value);
+	if (!$theme || !$theme->{selectable}) {
+		theme_change_error('The selected theme is unavailable. Check that its CSS file is installed.');
+	} else {
+		my $saved = eval {
+			require LoxBerry::System::General;
+			my $json = LoxBerry::System::General->new();
+			my $cfg = $json->open() or die "Cannot open general.json";
+			if (($cfg->{Base}{Theme} // '') ne $theme->{id}) {
+				$cfg->{Base}{Theme} = $theme->{id};
+				$json->write() or die "Cannot write general.json";
+			}
+			1;
+		};
+		if (!$saved) {
+			warn "Theme activation: $@";
+			theme_change_error('Could not save the selected theme. Check the system configuration permissions.');
+		} else {
+			# Refresh legacy headers after the theme selection has been saved.
+			my $generator = "$LoxBerry::System::lbshtmlauthdir/tools/generatelegacytemplates.pl";
+			system("perl '$generator' --force >/dev/null 2>&1") if -f $generator;
+			$response{error} = 0;
+			$response{message} = 'OK';
+		}
 	}
 }
 elsif ($action eq 'plugininstall-status') { plugininstall_status(); }
@@ -424,6 +455,20 @@ sub recreate_generalcfg
 	return 1;
 }
 
+
+sub theme_change_error
+{
+	my ($message) = @_;
+	$response{error} = 1;
+	$response{message} = $message;
+	$response{notified} = eval {
+		require LoxBerry::Log;
+		LoxBerry::Log::notify_ext({
+			PACKAGE => 'myloxberry', NAME => 'theme', SEVERITY => 3, MESSAGE => $message,
+		});
+		1;
+	} ? 1 : 0;
+}
 
 END {
 

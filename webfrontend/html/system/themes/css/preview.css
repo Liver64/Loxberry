@@ -1,0 +1,87 @@
+/* LoxBerry CSS Studio Preview - Version: 4.0.1.8 */
+/* Add the working wallpaper without changing the original preview layout. */
+.lb-main { position: relative; isolation: isolate; }
+.lb-main::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: var(--cfw-studio-wallpaper-image, none);
+  background-position: center; background-size: cover;
+  opacity: var(--cfw-studio-wallpaper-opacity, 1);
+  filter: brightness(var(--cfw-studio-wallpaper-brightness, 1));
+}
+
+/* Preserve the original tooltip contract within the Studio preview. */
+/* --- Tooltip / Hover Popover --- */
+.lb-tooltip-anchor {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	width: max-content;
+	max-width: 100%;
+}
+.lb-tooltip {
+	position: absolute;
+	left: 50%;
+	bottom: calc(100% + 10px);
+	transform: translateX(-50%) translateY(4px);
+	z-index: var(--lb-tooltip-z-index, 1200);
+	min-width: 180px;
+	max-width: min(360px, calc(100vw - 32px));
+	width: max-content;
+	padding: var(--lb-tooltip-padding, 8px 10px);
+	box-sizing: border-box;
+	background: var(--lb-tooltip-bg, var(--lb-card-bg));
+	color: var(--lb-tooltip-text, var(--lb-text));
+	border: 1px solid var(--lb-tooltip-border, var(--lb-border-color));
+	border-radius: var(--lb-tooltip-radius, var(--lb-radius));
+	box-shadow: var(--lb-tooltip-shadow, var(--lb-card-shadow));
+	font-size: var(--lb-font-sm);
+	font-weight: 500;
+	line-height: 1.35;
+	text-align: left;
+	white-space: normal;
+	text-shadow: none;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+.lb-tooltip::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	bottom: calc(var(--lb-tooltip-arrow-size, 7px) * -1);
+	transform: translateX(-50%);
+	width: 0;
+	height: 0;
+	border-left: var(--lb-tooltip-arrow-size, 7px) solid transparent;
+	border-right: var(--lb-tooltip-arrow-size, 7px) solid transparent;
+	border-top: var(--lb-tooltip-arrow-size, 7px) solid var(--lb-tooltip-bg, var(--lb-card-bg));
+}
+.lb-tooltip-anchor:hover .lb-tooltip,
+.lb-tooltip-anchor:focus-within .lb-tooltip,
+.lb-tooltip-anchor.is-open .lb-tooltip {
+	opacity: 1;
+	visibility: visible;
+	transform: translateX(-50%) translateY(0);
+}
+.lb-tooltip-title {
+	display: block;
+	font-weight: 700;
+	margin-bottom: 4px;
+}
+
+/* Top-layer tooltips remain inside the preview viewport and above all page content. */
+.lb-tooltip[popover] {
+  position: fixed; inset: auto; margin: 0; transform: none;
+  max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
+  overflow-wrap: anywhere;
+}
+.lb-tooltip[popover]:popover-open {
+  opacity: 1; visibility: visible; transform: none;
+}
+.lb-tooltip[popover]::backdrop { background: transparent; pointer-events: none; }
+.lb-tooltip[popover].cfw-tooltip-below::after {
+  bottom: auto; top: calc(var(--lb-tooltip-arrow-size, 7px) * -1);
+  border-top: 0;
+  border-bottom: var(--lb-tooltip-arrow-size, 7px) solid var(--lb-tooltip-bg, var(--lb-card-bg));
+}

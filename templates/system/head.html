@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Version: 4.0.1.24 - Load the active theme through the registry. -->
 <html lang="<TMPL_VAR LANG>">
 <!-- head.html START -->
 <head>
@@ -19,7 +20,7 @@
 	<link rel="stylesheet" href="/system/css/design-tokens.css?v=25" />
 	<link rel="stylesheet" href="/system/css/main.css?v=25" />
 	<link rel="stylesheet" href="/system/css/components.css?v=27" />
-	<link rel="stylesheet" href="/system/css/<TMPL_VAR THEME_FILE>?v=25" />
+	<TMPL_IF THEME_URL><link rel="stylesheet" href="<TMPL_VAR THEME_URL ESCAPE=HTML>" /></TMPL_IF>
 	<link rel="shortcut icon" href="/system/images/favicon.ico" />
 	<link rel="icon" type="image/png" href="/system/images/favicon-96x96.png" sizes="96x96" />
 	<link rel="icon" type="image/png" href="/system/images/favicon-32x32.png" sizes="32x32" />

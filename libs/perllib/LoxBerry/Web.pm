@@ -3,6 +3,7 @@
 
 use strict;
 use LoxBerry::System;
+use LoxBerry::Theme ();
 # use CGI;
 use HTML::Template;
 use Time::Piece;
@@ -15,7 +16,7 @@ use CGI::Carp qw(fatalsToBrowser set_message);
 set_message('Depending of what you have done, report this error to the plugin developer or the LoxBerry-Core team.<br>Further information you may find in the error logs.');
 
 package LoxBerry::Web;
-our $VERSION = "3.0.0.3";
+our $VERSION = "3.0.0.4";
 our $DEBUG;
 
 use base 'Exporter';
@@ -137,11 +138,11 @@ sub head
 	$headobj->param( IS_CORE_PAGE => $systemcall ? 1 : 0 );
 	$headobj->param( LOAD_JQM     => (!$systemcall && !$nojqm) ? 1 : 0 );
 
-	# Theme support
-	my $theme = $LoxBerry::System::lbtheme // 'soft-rounded';
-	$theme = 'soft-rounded' unless $theme =~ /^(soft-rounded|clean-admin|glass|classic-lb)$/;
-	$headobj->param( THEME_CLASS => "theme-$theme" );
-	$headobj->param( THEME_FILE => "theme-$theme.css" );
+	# Theme support through the central registry.
+	my $theme_id = LoxBerry::Theme::normalize_theme($LoxBerry::System::lbtheme // 'classic-lb');
+	my $theme = LoxBerry::Theme::get_theme($theme_id) || LoxBerry::Theme::get_theme('classic-lb');
+	$headobj->param( THEME_CLASS => "theme-$theme_id" );
+	$headobj->param( THEME_URL => $theme ? $theme->{css_url} : '' );
 
 	print "Content-Type: text/html; charset=utf-8\n\n";
 	print $headobj->output();

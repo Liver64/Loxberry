@@ -1,3 +1,4 @@
+<!-- Version: 4.0.1.24 - Report theme errors through LoxBerry notifications. -->
 <!-- ** START template/system/myloxberry.html 08.01.2019 21:38:45 ************************************************************************************ -->
 <TMPL_IF form1>
 	<form method="post" data-ajax="false" name="main_form" id="main_form" action="<TMPL_VAR SELFURL>" style="max-width:80%;margin:0 auto">
@@ -30,10 +31,12 @@
 			</div>
 			<div class="lb-form-field">
 				<select class="lb-select" name="themeselector" id="themeselector" data-role="none">
-					<option value="classic-lb">Classic LoxBerry</option>
-					<option value="soft-rounded">Soft &amp; Rounded (Alpha)</option>
-					<option value="clean-admin">Clean Admin (Alpha)</option>
-					<option value="glass">Glassmorphism (Alpha)</option>
+					<optgroup label="Core Themes">
+						<option value="classic-lb">Classic LoxBerry</option>
+						<option value="soft-rounded">Soft &amp; Rounded (Alpha)</option>
+						<option value="clean-admin">Clean Admin (Alpha)</option>
+						<option value="glass">Glassmorphism (Alpha)</option>
+					</optgroup>
 				</select>
 			</div>
 		</div>
@@ -105,9 +108,69 @@
 					});
 			});
 
-			// Theme: Dropdown setzt Wert und wechselt direkt
+			// Theme: Dropdown setzt Wert und wechselt direkt.
+			// Veröffentlichte User Themes bleiben pluginverwaltet und werden
+			// über das Core-CGI /admin/system/theme-file.cgi ausgeliefert.
+			// Der Wert ist z.B. user-classic-windows.
 			var currentTheme = "<TMPL_VAR CURRENTTHEME>" || "soft-rounded";
-			$("#themeselector").val(currentTheme);
+
+			function showThemeError(message, notified) {
+				function refreshNotifications() {
+					if (typeof btnnotifies_get === "function") btnnotifies_get(true);
+				}
+				if (notified) {
+					refreshNotifications();
+					return;
+				}
+				$.post("/admin/system/ajax/ajax-notification-handler.cgi", {
+					action: "notifyext", PACKAGE: "myloxberry", NAME: "theme",
+					SEVERITY: 3, MESSAGE: message
+				}).done(refreshNotifications).fail(function() {
+					console.error(message);
+				});
+			}
+
+			function ensureCurrentThemeOption() {
+				var optionExists = $("#themeselector option").filter(function() {
+					return this.value === currentTheme;
+				}).length > 0;
+				if (!optionExists && /^user-[a-z0-9][a-z0-9_-]*$/.test(currentTheme)) {
+					var group = $('<optgroup label="User Themes" data-generated="current-theme"></optgroup>');
+					group.append($('<option></option>').attr('value', currentTheme).text(currentTheme));
+					$('#themeselector').append(group);
+				}
+			}
+
+			function setCurrentThemeSelection() {
+				ensureCurrentThemeOption();
+				$("#themeselector").val(currentTheme);
+			}
+
+			$.getJSON("/admin/system/ajax/ajax-config-handler.cgi", { action: "listthemes" })
+				.done(function(data) {
+					if (!data || Number(data.error) !== 0) {
+						showThemeError("Could not load user themes.");
+						return;
+					}
+					var themes = (data && data.themes) ? data.themes : [];
+					if (themes.length > 0) {
+						var group = $('<optgroup label="User Themes" data-generated="user-themes"></optgroup>');
+						$.each(themes, function(index, theme) {
+							if (!theme || !theme.id || !theme.name) return;
+							group.append($('<option></option>').attr('value', theme.id).text(theme.name));
+						});
+						if (group.children().length > 0) {
+							$('#themeselector optgroup[data-generated="user-themes"]').remove();
+							$('#themeselector').append(group);
+						}
+					}
+				})
+				.fail(function(xhr) {
+					showThemeError("Could not load user themes.", xhr.responseJSON && xhr.responseJSON.notified);
+				})
+				.always(function() {
+					setCurrentThemeSelection();
+				});
 
 			$("#themeselector").bind("change", function() {
 				var val = $(this).val();
@@ -116,8 +179,18 @@
 					{
 						action: "changetheme",
 						value: val
-					}, function() {
-						location.reload();
+					})
+					.done(function(data) {
+						if (data && Number(data.error) === 0) {
+							location.reload();
+							return;
+						}
+						$("#themeselector").val(currentTheme);
+						showThemeError("Could not change theme.", data && data.notified);
+					})
+					.fail(function(xhr) {
+						$("#themeselector").val(currentTheme);
+						showThemeError("Could not change theme.", xhr.responseJSON && xhr.responseJSON.notified);
 					});
 			});
 		});
